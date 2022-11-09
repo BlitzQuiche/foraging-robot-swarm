@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 
 [RequireComponent (typeof(RobotController))]
+[RequireComponent (typeof(GrabSystem))]
 public class Robot : MonoBehaviour
 {
     // Robot Positional Information 
@@ -12,7 +13,7 @@ public class Robot : MonoBehaviour
     float randomWalkDirectionTime;
 
     // Scanner
-    public float scanRadius;
+    public float scanRadius = 5;
 
     Vector3 velocity;
     Vector3 direction;
@@ -54,11 +55,13 @@ public class Robot : MonoBehaviour
 
     Vector3 nestPosition;
     RobotController controller;
+    GrabSystem grabber;
 
     // Start is called before the first frame update
     void Start()
     {
         controller = GetComponent<RobotController>();
+        grabber = GetComponent<GrabSystem>();
         nestPosition = GameObject.Find("Nest").transform.position;
 
         // Iniitalise Robot time thresholds
@@ -72,9 +75,7 @@ public class Robot : MonoBehaviour
         randomWalkDirectionTime = 0;
 
         // Initialise State
-        state = States.RandomWalk;
-
-        scanRadius = 5;
+        state = States.Resting;
 
     }
 
@@ -83,7 +84,7 @@ public class Robot : MonoBehaviour
     {
         switch(state)
         {
-            
+
             case States.Resting:
                 // How long have we been resting for?
                 restingTime += Time.deltaTime;
@@ -91,6 +92,7 @@ public class Robot : MonoBehaviour
                 // If we have rested long enough, leave the home ! 
                 if(restingTime > thresholdResting)
                 {
+                    direction = GetRandomDirection();
                     state = States.LeavingHome;
                     restingTime = 0;
                 }
@@ -104,6 +106,7 @@ public class Robot : MonoBehaviour
                 {
                     // Let's go home.
                     state = States.Homing;
+                    ChangeAntenaColor(Color.red);
                     Debug.Log("RandomWalk -> Homing");
                 }
 
@@ -114,15 +117,17 @@ public class Robot : MonoBehaviour
                     // We have found a food item! 
                     // Let's move towards it
                     state = States.MoveToFood;
+                    ChangeAntenaColor(Color.yellow);
                     Debug.Log("RandomWalk -> MoveToFood");
                     break;
                 }
 
                 // Get a new direction to randomWalk and move that way ! 
-                MoveRobot(GetRandomWalkDirection());
+                MoveRobot(RandomWalkDirection());
                 break;
 
             case States.MoveToFood:
+                ChangeAntenaColor(Color.yellow);
                 searchingTime += Time.deltaTime;
 
                 // Have we ran out of time to look for food? 
@@ -130,6 +135,7 @@ public class Robot : MonoBehaviour
                 {
                     // Let's go home.
                     state = States.Homing;
+                    ChangeAntenaColor(Color.red);
                     Debug.Log("RandomWalk -> Homing");
                 }
 
@@ -138,12 +144,44 @@ public class Robot : MonoBehaviour
                 {
                     // We have lost the food! Scan the area again to find it. 
                     state = States.Homing;
+                    ChangeAntenaColor(Color.red);
+                    break;
+                }
+
+                // Are we close enough to grab the food?
+                if(Vector3.Distance(targetFoodItem.transform.position, transform.position) < 1.5)
+                {
+                    // Grab the food and go home !
+                    grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
+                    Debug.Log("MoveToFood --> MoveToHome; Found some food!");
+                    state = States.MoveToHome;
+                    ChangeAntenaColor(Color.green);
                     break;
                 }
 
                 var foodDirection = (targetFoodItem.transform.position - transform.position).normalized;
                 MoveRobot(foodDirection);
 
+                break;
+
+            case States.MoveToHome:
+                // Change robot antenna colour to MOVETOHOME
+                if (Vector3.Distance(nestPosition, transform.position) > 1.5)
+                {
+                    // Move robot towards the nest ! 
+                    MoveRobot((GameObject.Find("Nest").transform.position - transform.position).normalized);
+                    break;
+                }
+
+                // If we have got home with some food, let's deposit it.
+                grabber.DropItem(targetFoodItem.GetComponent<FoodItem>());
+                targetFoodItem = null;
+
+                // Let us rest
+                state = States.Resting;
+                ChangeAntenaColor(Color.white);
+                Debug.Log("MoveToHome --> Resting; Returned home and deposited food");
+                StopRobot();
                 break;
 
             case States.Homing:
@@ -153,7 +191,10 @@ public class Robot : MonoBehaviour
                     MoveRobot((GameObject.Find("Nest").transform.position - transform.position).normalized);
                     break;
                 }
+                
+                // Let us rest.
                 Debug.Log("Homing -> Resting");
+                ChangeAntenaColor(Color.white);
                 state = States.Resting;
                 StopRobot();
                 break;
@@ -167,6 +208,7 @@ public class Robot : MonoBehaviour
                 }
 
                 Debug.Log("LeavingHome -> RandomWalk");
+                ChangeAntenaColor(Color.blue);
                 // We have left the nest, let's start searching
                 state = States.RandomWalk;
                 searchingTime = 0;
@@ -197,13 +239,13 @@ public class Robot : MonoBehaviour
     }
 
     // Gets a new random direction to walk towards if we have been walking in same direction long enough. 
-    private Vector3 GetRandomWalkDirection()
+    private Vector3 RandomWalkDirection()
     {
         randomWalkDirectionTime += Time.deltaTime;
 
         if (randomWalkDirectionTime > randomWalkDirectionThreshold)
         {
-            Vector3 randomDirection = (direction + Random.insideUnitSphere * wanderStrength).normalized;
+            Vector3 randomDirection = GetRandomDirection();
             randomWalkDirectionTime = 0f;
             return randomDirection;
         } 
@@ -212,6 +254,11 @@ public class Robot : MonoBehaviour
             // If we don't need to change direction yet, just keep going the same way. 
             return direction;
         }
+    }
+
+    private Vector3 GetRandomDirection()
+    {
+        return (direction + Random.insideUnitSphere * wanderStrength).normalized;
     }
 
     // Calculates the new velocity of a robot given a new direction and passes velocity to controller.
@@ -225,6 +272,10 @@ public class Robot : MonoBehaviour
 
         //Debug.Log("Direction: " + direction.ToString());
 
+        //var looking = direction + transform.position;
+        //looking.y = 1f
+        //transform.LookAt(looking);
+
         // Calcultate and update robots velocity. 
         velocity = direction.normalized * maxSpeed;
         //Debug.Log("Velocity: " + velocity.ToString());
@@ -237,6 +288,11 @@ public class Robot : MonoBehaviour
     {
         velocity = Vector3.zero;
         controller.Move(velocity);
+    }
+
+    private void ChangeAntenaColor(Color colour)
+    {
+        transform.GetChild(0).GetComponent<MeshRenderer>().material.color = colour;
     }
 
     private void OnDrawGizmosSelected()
