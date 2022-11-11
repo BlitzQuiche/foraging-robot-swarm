@@ -20,4 +20,9 @@ public class FoodItem : MonoBehaviour
         // Set RigidBody
         rb = GetComponent<Rigidbody>();
     }
+
+    public void RemoveFoodItem()
+    {
+        Destroy(gameObject, 2f);
+    }
 }

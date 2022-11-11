@@ -38,5 +38,8 @@ public class GrabSystem : MonoBehaviour
 
         // Enable colldier
         item.GetComponent<CapsuleCollider>().enabled = true;
+
+        // Destroy the food item after 2 seconds
+        item.RemoveFoodItem();
     }
 }
