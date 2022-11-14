@@ -13,7 +13,7 @@ public class Robot : MonoBehaviour
 
     // Scanner
     public float foodScanRadius = 5;
-    float proximityScanRadius = 2;
+    float proximityScanRadius = 2.5f;
 
 
     Vector3 velocity;
@@ -129,10 +129,12 @@ public class Robot : MonoBehaviour
                 var obsticles = ScanForCollisions();
                 if (obsticles.Count > 0 )
                 {
-                    // If we proximity scan some obsticles, calculate and move in a new direction 
-                    // to avoid all of these obsticles.
-                    
-                    MoveRobot(avoid(obsticles));
+                    // If we proximity scan some obsticles, calculate and add a force in direction
+                    // away from all of these obsticles
+                    Avoid(obsticles);
+
+                    // Keep moving in whichever direction we were moving previously.
+                    MoveRobot(direction);
                     break;
                 }
 
@@ -157,8 +159,17 @@ public class Robot : MonoBehaviour
                     Debug.Log("RandomWalk -> Homing");
                 }
 
+                // Are we searching in the home? 
+                if (Vector3.Distance(nestPosition, transform.position) < 8)
+                {
+                    // Move robot away from the nest ! 
+                    MoveRobot(-(GameObject.Find("Nest").transform.position - transform.position).normalized);
+                    break;
+                }
+
                 // Check if we can see any food! 
                 targetFoodItem = ScanAndTargetFood();
+
                 if(targetFoodItem != null)
                 {
                     // We have found a food item! 
@@ -299,7 +310,7 @@ public class Robot : MonoBehaviour
                 if (Vector3.Distance(nestPosition, transform.position) < 12)
                 {
                     // Move robot in whichever direction we were previously going to leave the nest.
-                    MoveRobot(direction);
+                    MoveRobot(-(GameObject.Find("Nest").transform.position - transform.position).normalized);
                     break;
                 }
 
@@ -315,6 +326,7 @@ public class Robot : MonoBehaviour
                 break;
         }
         
+
     }
 
 
@@ -358,7 +370,7 @@ public class Robot : MonoBehaviour
     // Avoidance algorithm
     // Calculates opposite direction from all potential collisons.
     // Robot will then move in that direction. 
-    private Vector3 avoid(List<Collider> obsticles)
+    private void Avoid(List<Collider> obsticles)
     { 
         Vector3 avoidanceDirection = Vector3.zero;
         foreach (Collider obsticle in obsticles)
@@ -374,7 +386,7 @@ public class Robot : MonoBehaviour
         //Debug.Log(avoidanceDirection);
         //Debug.Log(-(avoidanceDirection));
 
-        return -(avoidanceDirection);
+        gameObject.GetComponent<Rigidbody>().AddForce(-avoidanceDirection.normalized);
     }
 
     // Check proximity scanners to see if we are about to hit any other robots.

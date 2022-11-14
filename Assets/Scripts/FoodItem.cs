@@ -5,8 +5,6 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class FoodItem : MonoBehaviour
 {   
-    // Retrieval of food will deliver 2000 units of energy to the swarm. 
-    int EnergyValue = 2000;
 
     private Rigidbody rb;
     public Rigidbody Rb => rb;
