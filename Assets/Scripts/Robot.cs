@@ -146,7 +146,7 @@ public class Robot : MonoBehaviour
 
             case States.RandomWalk:
                 // Are we going to hit another robot?
-                if (checkAvoidance()) break;
+                if (CheckAvoidance()) break;
 
                 searchingTime += Time.deltaTime;
 
@@ -160,10 +160,10 @@ public class Robot : MonoBehaviour
                 }
 
                 // Are we searching in the home? 
-                if (Vector3.Distance(nestPosition, transform.position) < 8)
+                if (Vector3.Distance(nestPosition, transform.position) < 10)
                 {
                     // Move robot away from the nest ! 
-                    MoveRobot(-(GameObject.Find("Nest").transform.position - transform.position).normalized);
+                    MoveRobot(-(nestPosition - transform.position).normalized);
                     break;
                 }
 
@@ -185,7 +185,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.MoveToFood:
-                if (checkAvoidance()) break;
+                if (CheckAvoidance()) break;
                 searchingTime += Time.deltaTime;
 
                 // Have we ran out of time to look for food? 
@@ -226,7 +226,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.ScanArea:
-                if (checkAvoidance()) break;
+                if (CheckAvoidance()) break;
                 searchingTime += Time.deltaTime;
                 scanAreaTime += Time.deltaTime;
 
@@ -262,12 +262,18 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.MoveToHome:
-                if (checkAvoidance()) break;
-                // Change robot antenna colour to MOVETOHOME
-                if (Vector3.Distance(nestPosition, transform.position) > Random.Range(1, 8))
+                if (Vector3.Distance(nestPosition, transform.position) > 10)
                 {
+                    // Do colision avoidance if we are on our way back to the nest.
+                    if (CheckAvoidance()) break;
                     // Move robot towards the nest ! 
-                    MoveRobot((GameObject.Find("Nest").transform.position - transform.position).normalized);
+                    MoveRobot((nestPosition - transform.position).normalized);
+                    break;
+                }
+                else if (Vector3.Distance(nestPosition, transform.position) > 6)
+                {
+                    // Turn off colision avoidance when we are entering the nest
+                    MoveRobot((nestPosition - transform.position).normalized);
                     break;
                 }
 
@@ -285,14 +291,21 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.Homing:
-                if (checkAvoidance()) break;
-                if (Vector3.Distance(nestPosition, transform.position) > Random.Range(1, 8))
-                {                    
+                if (Vector3.Distance(nestPosition, transform.position) > 10)
+                {
+                    // Do colision avoidance if we are on our way back to the nest.
+                    if (CheckAvoidance()) break;
                     // Move robot towards the nest ! 
-                    MoveRobot((GameObject.Find("Nest").transform.position - transform.position).normalized);
+                    MoveRobot((nestPosition - transform.position).normalized);
                     break;
                 }
-                
+                else if (Vector3.Distance(nestPosition, transform.position) > 6)
+                {
+                    // Turn off colision avoidance when we are entering the nest
+                    MoveRobot((nestPosition - transform.position).normalized);
+                    break;
+                }
+
                 // Let us rest.
                 Debug.Log("Homing -> Resting");
                 state = States.Resting;
@@ -306,11 +319,14 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.LeavingHome:
-                if(checkAvoidance()) break;
+                // We decide not to do any colision avoidance when leaving the nest. 
+                // Assumption that robots can find their own way to the edge of nest 
+                // without bumping into other robots. 
+
                 if (Vector3.Distance(nestPosition, transform.position) < 12)
                 {
                     // Move robot in whichever direction we were previously going to leave the nest.
-                    MoveRobot(-(GameObject.Find("Nest").transform.position - transform.position).normalized);
+                    MoveRobot(direction);
                     break;
                 }
 
@@ -329,8 +345,7 @@ public class Robot : MonoBehaviour
 
     }
 
-
-    private bool checkAvoidance()
+    private bool CheckAvoidance()
     {
         if (ScanForCollisions().Count > 0)
         {
