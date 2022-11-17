@@ -1,10 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
-[RequireComponent (typeof(RobotController))]
-[RequireComponent (typeof(GrabSystem))]
+[RequireComponent(typeof(RobotController))]
+[RequireComponent(typeof(GrabSystem))]
 public class Robot : MonoBehaviour
 {
     int id;
@@ -31,7 +30,7 @@ public class Robot : MonoBehaviour
 
     float searchingTime;
     float thresholdSearching;
-    
+
     float restingTime;
     float thresholdResting;
 
@@ -59,7 +58,7 @@ public class Robot : MonoBehaviour
 
     Color[] colours =
     {
-        Color.cyan, 
+        Color.cyan,
         Color.blue,
         Color.magenta,
         Color.yellow,
@@ -80,7 +79,7 @@ public class Robot : MonoBehaviour
     RobotController controller;
     GrabSystem grabber;
     SimulationData simulation;
-    
+
 
     // Start is called before the first frame update
     void Start()
@@ -120,7 +119,7 @@ public class Robot : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        switch(state)
+        switch (state)
         {
 
             case States.Resting:
@@ -128,22 +127,22 @@ public class Robot : MonoBehaviour
                 restingTime += Time.deltaTime;
 
                 // If we have rested long enough, leave the home ! 
-                if(restingTime > thresholdResting)
+                if (restingTime > thresholdResting)
                 {
                     direction = GetRandomDirection();
 
                     state = States.LeavingHome;
                     simulation.UpdateState(id, (int)state);
-                    
+
                     ChangeAntenaColor(colours[(int)state]);
-                    
+
                     restingTime = 0;
                 }
                 break;
 
             case States.Avoidance:
                 var obsticles = ScanForCollisions();
-                if (obsticles.Count > 0 )
+                if (obsticles.Count > 0)
                 {
                     // If we proximity scan some obsticles, calculate and add a force in direction
                     // away from all of these obsticles
@@ -168,7 +167,7 @@ public class Robot : MonoBehaviour
                 searchingTime += Time.deltaTime;
 
                 // Have we ran out of time to look for food? 
-                if(searchingTime > thresholdSearching)
+                if (searchingTime > thresholdSearching)
                 {
                     // Let's go home.
                     state = States.Homing;
@@ -188,7 +187,7 @@ public class Robot : MonoBehaviour
                 // Check if we can see any food! 
                 targetFoodItem = ScanAndTargetFood();
 
-                if(targetFoodItem != null)
+                if (targetFoodItem != null)
                 {
                     // We have found a food item! 
                     // Let's move towards it
@@ -229,7 +228,7 @@ public class Robot : MonoBehaviour
                 }
 
                 // Are we close enough to grab the food?
-                if(Vector3.Distance(targetFoodItem.transform.position, transform.position) < 1.5)
+                if (Vector3.Distance(targetFoodItem.transform.position, transform.position) < 1.5)
                 {
                     // Grab the food and go home !
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
@@ -372,8 +371,6 @@ public class Robot : MonoBehaviour
 
                 break;
         }
-        
-
     }
 
     private bool CheckAvoidance()
@@ -418,7 +415,7 @@ public class Robot : MonoBehaviour
     // Calculates opposite direction from all potential collisons.
     // Robot will then move in that direction. 
     private void Avoid(List<Collider> obsticles)
-    { 
+    {
         Vector3 avoidanceDirection = Vector3.zero;
         foreach (Collider obsticle in obsticles)
         {
@@ -458,7 +455,7 @@ public class Robot : MonoBehaviour
             Vector3 randomDirection = GetRandomDirection();
             randomWalkDirectionTime = 0f;
             return randomDirection;
-        } 
+        }
         else
         {
             // If we don't need to change direction yet, just keep going the same way. 
@@ -507,7 +504,7 @@ public class Robot : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
-        
+
         Gizmos.DrawWireSphere(transform.position, foodScanRadius);
 
         Gizmos.color = Color.black;

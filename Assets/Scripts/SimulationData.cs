@@ -31,10 +31,10 @@ public class SimulationData : MonoBehaviour
         StartCoroutine(CollectDataAndSpawn());
     }
 
-    
+
     void Update()
     {
-        
+
     }
 
     IEnumerator CollectDataAndSpawn()
@@ -42,7 +42,7 @@ public class SimulationData : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(1f);
-            
+
             // Calculate whether we should place a food item or not
             var random = Random.Range(0, 1000);
             if (random <= ProbabilityNew)
@@ -58,9 +58,9 @@ public class SimulationData : MonoBehaviour
             // Collecting Robot energy data
             var energyUsed = 0;
 
-            foreach(KeyValuePair<int, int> kvp in robotStates)
+            foreach (KeyValuePair<int, int> kvp in robotStates)
             {
-                string message = string.Format("Robot ID = {0}, State = {1}, EnergyConsumed = {2}", kvp.Key, kvp.Value, stateEnergyConsumption[kvp.Value]);
+                string message = string.Format("Robot ID = {0}, State = {1}, EnergyConsumed = {2},Time = {3}", kvp.Key, kvp.Value, stateEnergyConsumption[kvp.Value], Time.time.ToString());
                 Debug.Log(message);
                 energyUsed += stateEnergyConsumption[kvp.Value];
             }

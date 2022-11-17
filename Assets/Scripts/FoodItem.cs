@@ -1,10 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class FoodItem : MonoBehaviour
-{   
+{
 
     private Rigidbody rb;
     public Rigidbody Rb => rb;
@@ -12,7 +10,7 @@ public class FoodItem : MonoBehaviour
     private void Start()
     {
         // Set fooditem to the fooditem layer
-        gameObject.layer = (int) Robot.Layers.FoodItems;
+        gameObject.layer = (int)Robot.Layers.FoodItems;
         Debug.Log(gameObject.layer.ToString());
 
         // Set RigidBody
