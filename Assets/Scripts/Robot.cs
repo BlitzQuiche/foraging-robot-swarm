@@ -9,17 +9,16 @@ public class Robot : MonoBehaviour
     int id;
 
     // Robot Positional Information 
-    public float maxSpeed = 5;
+    public float maxSpeed = 2;
     float wanderStrength = 0.8f;
-
-    // Scanner
-    public float foodScanRadius = 5;
-    float proximityScanRadius = 2.5f;
-
 
     Vector3 velocity;
     Vector3 direction;
     Vector3 looking;
+
+    // Scanner
+    public float foodScanRadius = 5;
+    float proximityScanRadius = 2.5f;
 
     // Target food item
     Collider targetFoodItem;
@@ -30,12 +29,37 @@ public class Robot : MonoBehaviour
 
     float searchingTime;
     float thresholdSearching;
+    float thresholdSearchingMin = 5;
+    float thresholdSearchingMax = 50;
 
     float restingTime;
     float thresholdResting;
+    float thresholdRestingMax = 100;
 
     float scanAreaTime;
     float scanAreaThreshold;
+    
+    // Enivronental Cues
+    // Avoidance Rest Increase
+    float ari = 5;
+    // Avoidance Search Decrease
+    float asd = 5;
+
+    // Internal Cues
+    // Failure Rest Increase
+    float fri = 20;
+    // Success Rest Decrease
+    float srd = 20;
+
+    // Social Cues
+    // Teamate Success Rest Decrease
+    float tsrd;
+    // Teammate Failure Rest Increase
+    float tfri;
+    // Teammate Success Search Increase
+    float tssi;
+    // Teammate Failure Search Decrease
+    float tfsd;
 
     // Robot Effort
     float effort;
@@ -92,8 +116,8 @@ public class Robot : MonoBehaviour
         gameObject.layer = (int)Layers.Robots;
 
         // Iniitalise Robot time thresholds
-        thresholdResting = 5;
-        thresholdSearching = 10;
+        thresholdResting = 0;
+        thresholdSearching = 50;
         randomWalkDirectionThreshold = 1;
         scanAreaThreshold = 0.25f;
 
@@ -308,6 +332,10 @@ public class Robot : MonoBehaviour
                 // Tell the simulation that we have deposited some food
                 simulation.DepositFood();
 
+                // Update resting threshold with interal cues
+                thresholdResting -= srd;
+                
+
                 Debug.Log("MoveToHome --> Resting; Returned home and deposited food");
 
                 // Let us rest
@@ -332,6 +360,13 @@ public class Robot : MonoBehaviour
                     // Turn off colision avoidance when we are entering the nest
                     MoveRobot((nestPosition - transform.position).normalized);
                     break;
+                }
+
+                // We have not found food, update resting threshold with internal cue
+                thresholdResting += fri;
+                if (thresholdResting > thresholdRestingMax)
+                {
+                    thresholdResting = thresholdRestingMax;
                 }
 
                 // Let us rest.
@@ -385,6 +420,19 @@ public class Robot : MonoBehaviour
             state = States.Avoidance;
             simulation.UpdateState(id, (int)state);
             ChangeAntenaColor(colours[(int)state]);
+
+            // Update Thresholds with environmental cues
+            thresholdResting += ari;
+            if (thresholdResting > thresholdRestingMax)
+            {
+                thresholdResting = thresholdRestingMax;
+            }
+
+            thresholdSearching -= asd;
+            if (thresholdSearching < thresholdSearchingMin)
+            {
+                thresholdSearching = thresholdSearchingMin;
+            }
             return true;
         }
         return false;
