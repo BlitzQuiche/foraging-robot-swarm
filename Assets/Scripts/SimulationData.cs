@@ -7,8 +7,16 @@ public class SimulationData : MonoBehaviour
     // Class to keep track of all relevant simulation data for the foraging swarm. 
     public GameObject foodItemPrefab;
 
-    static int currentSwarmEnergy;
-    static int foodEnergyValue = 2000;
+    int currentSwarmEnergy;
+    int foodEnergyValue = 2000;
+
+    // Dictionary of Robot ID to robot state.
+    Dictionary<int, int> robotStates = new();
+
+    int[] stateEnergyConsumption =
+    {
+        6, 8, 8, 8, 6, 12, 1, 6, 9
+    };
 
     int robotsForaging;
 
@@ -16,6 +24,7 @@ public class SimulationData : MonoBehaviour
 
     private float spawnMinDistance = 12;
     private float spawnMaxDistance = 40;
+
     void Start()
     {
         ProbabilityNew = 200;
@@ -33,6 +42,7 @@ public class SimulationData : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(1f);
+            
             // Calculate whether we should place a food item or not
             var random = Random.Range(0, 1000);
             if (random <= ProbabilityNew)
@@ -44,15 +54,33 @@ public class SimulationData : MonoBehaviour
 
                 Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
             }
+
+            // Collecting Robot energy data
+            var energyUsed = 0;
+
+            foreach(KeyValuePair<int, int> kvp in robotStates)
+            {
+                string message = string.Format("Robot ID = {0}, State = {1}, EnergyConsumed = {2}", kvp.Key, kvp.Value, stateEnergyConsumption[kvp.Value]);
+                Debug.Log(message);
+                energyUsed += stateEnergyConsumption[kvp.Value];
+            }
+
+            currentSwarmEnergy -= energyUsed;
+
         }
     }
 
-    public static void DepositFood()
+    public void UpdateState(int robotId, int robotState)
+    {
+        robotStates[robotId] = robotState;
+    }
+
+    public void DepositFood()
     {
         currentSwarmEnergy += foodEnergyValue;
     }
 
-    public static void UseEnergy(int energyUsed)
+    public void UseEnergy(int energyUsed)
     {
         currentSwarmEnergy -= energyUsed;
     }

@@ -41,8 +41,5 @@ public class GrabSystem : MonoBehaviour
 
         // Destroy the food item after 2 seconds
         item.RemoveFoodItem();
-
-        // Tell the simulation that we have deposited some food
-        SimulationData.DepositFood();
     }
 }

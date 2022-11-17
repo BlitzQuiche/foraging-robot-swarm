@@ -7,9 +7,11 @@ using System.Linq;
 [RequireComponent (typeof(GrabSystem))]
 public class Robot : MonoBehaviour
 {
+    int id;
+
     // Robot Positional Information 
     public float maxSpeed = 5;
-    public float wanderStrength = 0.8f;
+    float wanderStrength = 0.8f;
 
     // Scanner
     public float foodScanRadius = 5;
@@ -77,6 +79,7 @@ public class Robot : MonoBehaviour
     Vector3 nestPosition;
     RobotController controller;
     GrabSystem grabber;
+    SimulationData simulation;
     
 
     // Start is called before the first frame update
@@ -91,7 +94,7 @@ public class Robot : MonoBehaviour
 
         // Iniitalise Robot time thresholds
         thresholdResting = 5;
-        thresholdSearching = 5;
+        thresholdSearching = 10;
         randomWalkDirectionThreshold = 1;
         scanAreaThreshold = 0.25f;
 
@@ -102,6 +105,15 @@ public class Robot : MonoBehaviour
 
         // Initialise State
         state = States.Resting;
+
+        // Initialise robot id 
+        id = gameObject.GetInstanceID();
+
+        // Get the simulationData instance
+        simulation = GameObject.Find("World").GetComponent<SimulationData>();
+
+        // Initialise Robot state in simulation data
+        simulation.UpdateState(id, (int)state);
 
     }
 
@@ -119,8 +131,12 @@ public class Robot : MonoBehaviour
                 if(restingTime > thresholdResting)
                 {
                     direction = GetRandomDirection();
+
                     state = States.LeavingHome;
+                    simulation.UpdateState(id, (int)state);
+                    
                     ChangeAntenaColor(colours[(int)state]);
+                    
                     restingTime = 0;
                 }
                 break;
@@ -141,6 +157,7 @@ public class Robot : MonoBehaviour
                 // We no longer need to avoid obsticles !
                 // Return to the previous state we were in.
                 state = avoidancePreviousState;
+                simulation.UpdateState(id, (int)state);
                 ChangeAntenaColor(avoidancePreviousColour);
                 break;
 
@@ -155,6 +172,7 @@ public class Robot : MonoBehaviour
                 {
                     // Let's go home.
                     state = States.Homing;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     Debug.Log("RandomWalk -> Homing");
                 }
@@ -175,6 +193,7 @@ public class Robot : MonoBehaviour
                     // We have found a food item! 
                     // Let's move towards it
                     state = States.MoveToFood;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     Debug.Log("RandomWalk -> MoveToFood");
                     break;
@@ -193,6 +212,7 @@ public class Robot : MonoBehaviour
                 {
                     // Let's go home.
                     state = States.Homing;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     Debug.Log("RandomWalk -> Homing");
                 }
@@ -202,6 +222,7 @@ public class Robot : MonoBehaviour
                 {
                     // We have lost the food! Scan the area again to find it. 
                     state = States.ScanArea;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     StopRobot();
                     break;
@@ -214,6 +235,7 @@ public class Robot : MonoBehaviour
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
                     Debug.Log("MoveToFood --> MoveToHome; Found some food!");
                     state = States.MoveToHome;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     break;
                 }
@@ -235,6 +257,7 @@ public class Robot : MonoBehaviour
                 {
                     // Let's go home.
                     state = States.Homing;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     Debug.Log("RandomWalk -> Homing");
                 }
@@ -244,6 +267,7 @@ public class Robot : MonoBehaviour
                 {
                     // Let's look somewhere else instead
                     state = States.RandomWalk;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     Debug.Log("ScanArea -> RandomWalk");
                 }
@@ -253,6 +277,7 @@ public class Robot : MonoBehaviour
                 {
                     // We have re-found the food! Let's move towards it!. 
                     state = States.MoveToFood;
+                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     break;
                 }
@@ -281,10 +306,14 @@ public class Robot : MonoBehaviour
                 grabber.DropItem(targetFoodItem.GetComponent<FoodItem>());
                 targetFoodItem = null;
 
+                // Tell the simulation that we have deposited some food
+                simulation.DepositFood();
+
                 Debug.Log("MoveToHome --> Resting; Returned home and deposited food");
 
                 // Let us rest
                 state = States.Resting;
+                simulation.UpdateState(id, (int)state);
                 ChangeAntenaColor(colours[(int)state]);
 
                 StopRobot();
@@ -309,6 +338,7 @@ public class Robot : MonoBehaviour
                 // Let us rest.
                 Debug.Log("Homing -> Resting");
                 state = States.Resting;
+                simulation.UpdateState(id, (int)state);
 
                 // White means resting.
                 ChangeAntenaColor(colours[(int)state]);
@@ -334,6 +364,7 @@ public class Robot : MonoBehaviour
 
                 // We have left the nest, let's start searching
                 state = States.RandomWalk;
+                simulation.UpdateState(id, (int)state);
                 searchingTime = 0;
 
                 // Blue means searching. 
@@ -355,6 +386,7 @@ public class Robot : MonoBehaviour
             avoidancePreviousState = state;
 
             state = States.Avoidance;
+            simulation.UpdateState(id, (int)state);
             ChangeAntenaColor(colours[(int)state]);
             return true;
         }
