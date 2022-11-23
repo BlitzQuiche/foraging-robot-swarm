@@ -9,15 +9,15 @@ public class Robot : MonoBehaviour
     int id;
 
     // Robot Positional Information 
-    public float maxSpeed = 2;
-    float wanderStrength = 0.8f;
+    float maxSpeed = 5;
+    float wanderStrength = 1f;
 
     Vector3 velocity;
     Vector3 direction;
     Vector3 looking;
 
     // Scanner
-    public float foodScanRadius = 5;
+    float foodScanRadius = 5;
     float proximityScanRadius = 2.5f;
 
     // Target food item
@@ -38,6 +38,9 @@ public class Robot : MonoBehaviour
 
     float scanAreaTime;
     float scanAreaThreshold;
+
+    float avoidanceCheckTime;
+    float avoidanceCheckThreshold = 2;
     
     // Enivronental Cues
     // Avoidance Rest Increase
@@ -165,13 +168,15 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.Avoidance:
-                var obsticles = ScanForCollisions();
-                if (obsticles.Count > 0)
+                
+                var collisions = ScanForCollisions();
+                if (collisions.Count > 0)
                 {
                     // If we proximity scan some obsticles, calculate and add a force in direction
                     // away from all of these obsticles
-                    Avoid(obsticles);
+                    Avoid(collisions);
 
+                    
                     // Keep moving in whichever direction we were moving previously.
                     MoveRobot(direction);
                     break;
@@ -410,9 +415,28 @@ public class Robot : MonoBehaviour
 
     private bool CheckAvoidance()
     {
-        if (ScanForCollisions().Count > 0)
+        var collisions = ScanForCollisions();
+        if (collisions.Count > 0)
         {
             StopRobot();
+
+            // Check if we are going to collide with any robots !
+            if (collisions.Any(c => c.GetComponent<Robot>() != null))
+            {
+                Debug.Log("Robot Collision Detected!");
+                // Update Thresholds with environmental cues
+                thresholdResting += ari;
+                if (thresholdResting > thresholdRestingMax)
+                {
+                    thresholdResting = thresholdRestingMax;
+                }
+
+                thresholdSearching -= asd;
+                if (thresholdSearching < thresholdSearchingMin)
+                {
+                    thresholdSearching = thresholdSearchingMin;
+                }
+            }
 
             avoidancePreviousColour = colours[(int)state];
             avoidancePreviousState = state;
@@ -421,21 +445,44 @@ public class Robot : MonoBehaviour
             simulation.UpdateState(id, (int)state);
             ChangeAntenaColor(colours[(int)state]);
 
-            // Update Thresholds with environmental cues
-            thresholdResting += ari;
-            if (thresholdResting > thresholdRestingMax)
-            {
-                thresholdResting = thresholdRestingMax;
-            }
-
-            thresholdSearching -= asd;
-            if (thresholdSearching < thresholdSearchingMin)
-            {
-                thresholdSearching = thresholdSearchingMin;
-            }
+            
             return true;
         }
         return false;
+    }
+            
+    // Avoidance algorithm
+    // Calculates opposite direction from all potential collisons.
+    // Robot will then move in that direction. 
+    private void Avoid(List<Collider> collisions)
+    {
+        Vector3 avoidanceDirection = Vector3.zero;
+        foreach (Collider collision in collisions)
+        {
+            avoidanceDirection += (collision.transform.position);
+        }
+        avoidanceDirection /= collisions.Count;
+
+        avoidanceDirection = (avoidanceDirection - transform.position).normalized;
+                
+        var randomAngle = Random.Range(-30, 30);
+        direction = Quaternion.AngleAxis(randomAngle, Vector3.up) * -avoidanceDirection.normalized;
+
+        //direction = -avoidanceDirection.normalized;
+
+        //gameObject.GetComponent<Rigidbody>().AddForce(-avoidanceDirection.normalized);
+    }
+
+    // Check proximity scanners to see if we are about to hit any other robots.
+    private List<Collider> ScanForCollisions()
+    {
+        var robots = Physics.OverlapSphere(transform.position, proximityScanRadius, LayerMask.GetMask("Robots", "Cage"));
+        var robotsList = robots.ToList();
+        var currentRobot = robotsList.SingleOrDefault(x => x.gameObject == gameObject);
+
+        robotsList.Remove(currentRobot);
+
+        return robotsList;
     }
 
     // Checks scanners for food, return a random food item if there are any. 
@@ -459,39 +506,6 @@ public class Robot : MonoBehaviour
         return Physics.OverlapSphere(transform.position, foodScanRadius, LayerMask.GetMask("FoodItems"));
     }
 
-    // Avoidance algorithm
-    // Calculates opposite direction from all potential collisons.
-    // Robot will then move in that direction. 
-    private void Avoid(List<Collider> obsticles)
-    {
-        Vector3 avoidanceDirection = Vector3.zero;
-        foreach (Collider obsticle in obsticles)
-        {
-            avoidanceDirection += (obsticle.transform.position);
-        }
-        avoidanceDirection /= obsticles.Count;
-
-        avoidanceDirection = (avoidanceDirection - transform.position).normalized;
-
-        //Debug.Log("--- Robot Calculating Avoidance ---");
-        //Debug.Log(direction);
-        //Debug.Log(avoidanceDirection);
-        //Debug.Log(-(avoidanceDirection));
-
-        gameObject.GetComponent<Rigidbody>().AddForce(-avoidanceDirection.normalized);
-    }
-
-    // Check proximity scanners to see if we are about to hit any other robots.
-    private List<Collider> ScanForCollisions()
-    {
-        var collisions = Physics.OverlapSphere(transform.position, proximityScanRadius, LayerMask.GetMask("Robots"));
-        var collisionsList = collisions.ToList();
-        var currentRobot = collisionsList.SingleOrDefault(x => x.gameObject == gameObject);
-
-        collisionsList.Remove(currentRobot);
-
-        return collisionsList;
-    }
 
     // Gets a new random direction to walk towards if we have been walking in same direction long enough. 
     private Vector3 RandomWalkDirection()

@@ -273,9 +273,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51fd4f222441d0643a71f23dcd981486, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxSpeed: 5
-  wanderStrength: 1
-  scanRadius: 8
+  maxSpeed: 0.57
+  foodScanRadius: 5
 --- !u!114 &2734178455802529990
 MonoBehaviour:
   m_ObjectHideFlags: 0

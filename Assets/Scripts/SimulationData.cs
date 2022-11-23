@@ -49,7 +49,7 @@ public class SimulationData : MonoBehaviour
             {
                 Vector3 spawnPos = Random.insideUnitCircle.normalized;
                 spawnPos.z = spawnPos.y;
-                spawnPos.y = 0.1f;
+                spawnPos.y = 0.01f;
                 spawnPos *= Random.Range(spawnMinDistance, spawnMaxDistance);
 
                 Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
@@ -60,8 +60,8 @@ public class SimulationData : MonoBehaviour
 
             foreach (KeyValuePair<int, int> kvp in robotStates)
             {
-                string message = string.Format("Robot ID = {0}, State = {1}, EnergyConsumed = {2},Time = {3}", kvp.Key, kvp.Value, stateEnergyConsumption[kvp.Value], Time.time.ToString());
-                Debug.Log(message);
+                //string message = string.Format("Robot ID = {0}, State = {1}, EnergyConsumed = {2},Time = {3}", kvp.Key, kvp.Value, stateEnergyConsumption[kvp.Value], Time.time.ToString());
+                //Debug.Log(message);
                 energyUsed += stateEnergyConsumption[kvp.Value];
             }
 
