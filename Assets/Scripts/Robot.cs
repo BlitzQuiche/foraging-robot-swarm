@@ -459,12 +459,14 @@ public class Robot : MonoBehaviour
         Vector3 avoidanceDirection = Vector3.zero;
         foreach (Collider collision in collisions)
         {
-            avoidanceDirection += (collision.transform.position);
+            avoidanceDirection += Physics.ClosestPoint(transform.position, collision, collision.transform.position, collision.transform.rotation);
         }
+                    
         avoidanceDirection /= collisions.Count;
 
         avoidanceDirection = (avoidanceDirection - transform.position).normalized;
-                
+        Debug.Log(avoidanceDirection);
+
         var randomAngle = Random.Range(-30, 30);
         direction = Quaternion.AngleAxis(randomAngle, Vector3.up) * -avoidanceDirection.normalized;
 
@@ -476,13 +478,13 @@ public class Robot : MonoBehaviour
     // Check proximity scanners to see if we are about to hit any other robots.
     private List<Collider> ScanForCollisions()
     {
-        var robots = Physics.OverlapSphere(transform.position, proximityScanRadius, LayerMask.GetMask("Robots", "Cage"));
-        var robotsList = robots.ToList();
-        var currentRobot = robotsList.SingleOrDefault(x => x.gameObject == gameObject);
+        var collisions = Physics.OverlapSphere(transform.position, proximityScanRadius, LayerMask.GetMask("Robots", "Cage"));
+        var collisionsList = collisions.ToList();
+        var currentRobot = collisionsList.SingleOrDefault(x => x.gameObject == gameObject);
 
-        robotsList.Remove(currentRobot);
+        collisionsList.Remove(currentRobot);
 
-        return robotsList;
+        return collisionsList;
     }
 
     // Checks scanners for food, return a random food item if there are any. 
@@ -567,6 +569,7 @@ public class Robot : MonoBehaviour
     {
         Gizmos.color = Color.red;
 
+        
         Gizmos.DrawWireSphere(transform.position, foodScanRadius);
 
         Gizmos.color = Color.black;

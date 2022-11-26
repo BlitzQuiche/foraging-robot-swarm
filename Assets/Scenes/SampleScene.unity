@@ -205,7 +205,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 29.246, y: -0.341, z: 0.244}
 --- !u!1 &206559482
 GameObject:
@@ -662,10 +662,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8829901245805454508, guid: c954f0a37d39b9041ba9e544022c85fa, type: 3}
-      propertyPath: maxSpeed
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 8829901245805454509, guid: c954f0a37d39b9041ba9e544022c85fa, type: 3}
       propertyPath: m_Name
       value: Robot
@@ -778,7 +774,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8829901245805454506, guid: c954f0a37d39b9041ba9e544022c85fa, type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8829901245805454506, guid: c954f0a37d39b9041ba9e544022c85fa, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1482,7 +1478,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8829901245805454506, guid: c954f0a37d39b9041ba9e544022c85fa, type: 3}
       propertyPath: m_RootOrder
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8829901245805454506, guid: c954f0a37d39b9041ba9e544022c85fa, type: 3}
       propertyPath: m_LocalPosition.x
