@@ -10,7 +10,7 @@ public class Robot : MonoBehaviour
 
     // Robot Positional Information 
     float maxSpeed = 5;
-    float wanderStrength = 1f;
+    float wanderStrength = 0.8f;
 
     Vector3 velocity;
     Vector3 direction;
@@ -26,7 +26,12 @@ public class Robot : MonoBehaviour
     // Robot Timings 
     float randomWalkDirectionTime;
     float randomWalkDirectionThreshold;
+    float scanAreaTime;
+    float scanAreaThreshold;
+    float avoidanceCheckTime;
+    float avoidanceCheckThreshold = 2;
 
+    // Robot Timings affected by cues
     float searchingTime;
     float thresholdSearching;
     float thresholdSearchingMin = 5;
@@ -36,13 +41,9 @@ public class Robot : MonoBehaviour
     float thresholdResting;
     float thresholdRestingMax = 100;
 
-    float scanAreaTime;
-    float scanAreaThreshold;
-
-    float avoidanceCheckTime;
-    float avoidanceCheckThreshold = 2;
     
-    // Enivronental Cues
+    
+    // Environental Cues
     // Avoidance Rest Increase
     float ari = 5;
     // Avoidance Search Decrease
@@ -56,13 +57,16 @@ public class Robot : MonoBehaviour
 
     // Social Cues
     // Teamate Success Rest Decrease
-    float tsrd;
+    float tsrd = 2;
     // Teammate Failure Rest Increase
-    float tfri;
+    float tfri = 2;
     // Teammate Success Search Increase
-    float tssi;
+    float tssi = 2;
     // Teammate Failure Search Decrease
-    float tfsd;
+    float tfsd = 2;
+
+    public float successSocialCue;
+    public float failureSocialCue;
 
     // Robot Effort
     float effort;
@@ -120,7 +124,7 @@ public class Robot : MonoBehaviour
 
         // Iniitalise Robot time thresholds
         thresholdResting = 0;
-        thresholdSearching = 50;
+        thresholdSearching = 20;
         randomWalkDirectionThreshold = 1;
         scanAreaThreshold = 0.25f;
 
@@ -133,7 +137,7 @@ public class Robot : MonoBehaviour
         state = States.Resting;
 
         // Initialise robot id 
-        id = gameObject.GetInstanceID();
+        id = GetInstanceID();
 
         // Get the simulationData instance
         simulation = GameObject.Find("World").GetComponent<SimulationData>();
@@ -150,6 +154,26 @@ public class Robot : MonoBehaviour
         {
 
             case States.Resting:
+                // Check for any new social cues!
+                
+                // If we have recived any social cues, make relevant updates ! 
+                if(successSocialCue > 0 || failureSocialCue > 0)
+                {
+                    Debug.Log($"Resting Robot social update, {successSocialCue}, {failureSocialCue}, br {thresholdResting}, bs {thresholdSearching}");
+                    thresholdResting = thresholdResting - (tsrd * successSocialCue) + (tfri * failureSocialCue);
+                    thresholdSearching = thresholdSearching + (tssi * successSocialCue) - (tfsd * failureSocialCue);
+
+                    if (thresholdResting < 0) thresholdResting = 0;
+                    if (thresholdSearching < thresholdSearchingMin) thresholdSearching = thresholdSearchingMin;
+                    if (thresholdSearching > thresholdSearchingMax) thresholdSearching = thresholdSearchingMax;
+
+                    Debug.Log($"Resting Robot social update, ar {thresholdResting}, as {thresholdSearching}");
+
+                    successSocialCue = 0;
+                    failureSocialCue = 0;
+                }
+                
+
                 // How long have we been resting for?
                 restingTime += Time.deltaTime;
 
@@ -198,6 +222,9 @@ public class Robot : MonoBehaviour
                 // Have we ran out of time to look for food? 
                 if (searchingTime > thresholdSearching)
                 {
+                    // Broadcast to everyone that we have failed to find any food. 
+                    simulation.BroadcastFailure(id);
+
                     // Let's go home.
                     state = States.Homing;
                     simulation.UpdateState(id, (int)state);
@@ -238,6 +265,9 @@ public class Robot : MonoBehaviour
                 // Have we ran out of time to look for food? 
                 if (searchingTime > thresholdSearching)
                 {
+                    // Broadcast to everyone that we have failed to find any food. 
+                    simulation.BroadcastFailure(id);
+
                     // Let's go home.
                     state = States.Homing;
                     simulation.UpdateState(id, (int)state);
@@ -259,9 +289,14 @@ public class Robot : MonoBehaviour
                 // Are we close enough to grab the food?
                 if (Vector3.Distance(targetFoodItem.transform.position, transform.position) < 1.5)
                 {
-                    // Grab the food and go home !
+                    // Grab the food !
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
                     Debug.Log("MoveToFood --> MoveToHome; Found some food!");
+
+                    // Broadcast social cue to tell everyone we have found some food! Hurray!
+                    simulation.BroadcastSuccess(id);
+
+                    // Update our state and start moving home.
                     state = States.MoveToHome;
                     simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
@@ -283,6 +318,9 @@ public class Robot : MonoBehaviour
                 // Have we ran out of time to look for food? 
                 if (searchingTime > thresholdSearching)
                 {
+                    // Broadcast to everyone that we have failed to find any food. 
+                    simulation.BroadcastFailure(id);
+
                     // Let's go home.
                     state = States.Homing;
                     simulation.UpdateState(id, (int)state);
@@ -339,6 +377,7 @@ public class Robot : MonoBehaviour
 
                 // Update resting threshold with interal cues
                 thresholdResting -= srd;
+                if (thresholdResting < 0) thresholdResting = 0;
                 
 
                 Debug.Log("MoveToHome --> Resting; Returned home and deposited food");
@@ -423,7 +462,7 @@ public class Robot : MonoBehaviour
             // Check if we are going to collide with any robots !
             if (collisions.Any(c => c.GetComponent<Robot>() != null))
             {
-                Debug.Log("Robot Collision Detected!");
+                //Debug.Log("Robot Collision Detected!");
                 // Update Thresholds with environmental cues
                 thresholdResting += ari;
                 if (thresholdResting > thresholdRestingMax)
@@ -450,7 +489,17 @@ public class Robot : MonoBehaviour
         }
         return false;
     }
-            
+
+    public void IncrementSuccessSocialCue()
+    {
+        successSocialCue += 1;
+    }
+
+    public void IncrementFailureSocialCue()
+    {
+        failureSocialCue += 1;
+    }
+
     // Avoidance algorithm
     // Calculates opposite direction from all potential collisons.
     // Robot will then move in that direction. 
@@ -465,7 +514,7 @@ public class Robot : MonoBehaviour
         avoidanceDirection /= collisions.Count;
 
         avoidanceDirection = (avoidanceDirection - transform.position).normalized;
-        Debug.Log(avoidanceDirection);
+        //Debug.Log(avoidanceDirection);
 
         var randomAngle = Random.Range(-30, 30);
         direction = Quaternion.AngleAxis(randomAngle, Vector3.up) * -avoidanceDirection.normalized;
