@@ -21,9 +21,13 @@ public class SimulationData : MonoBehaviour
         6, 8, 8, 8, 6, 12, 1, 6, 9
     };
 
-    int robotsForaging;
+    // Main Menu Inputs
+    int robotNumber;
+    float pNew;
 
-    int ProbabilityNew;
+
+    int robotsForaging;
+    float probabilityNew;
 
     private float spawnFoodMinDistance = 12;
     private float spawnFoodMaxDistance = 40;
@@ -37,7 +41,11 @@ public class SimulationData : MonoBehaviour
 
     void Start()
     {
-        ProbabilityNew = 200;
+        probabilityNew = 200;
+        robotNumber = MenuInput.NumRobotsInput;
+        pNew = MenuInput.ProbabilityNew;
+        Debug.Log(robotNumber);
+        SpawnRobots(robotNumber);
         StartCoroutine(CollectDataAndSpawn());
     }
 
@@ -60,11 +68,6 @@ public class SimulationData : MonoBehaviour
                 robot.failureSocialCue = 0;
             }
         }
-
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            SpawnRobots(6);
-        }
     }
 
     IEnumerator CollectDataAndSpawn()
@@ -75,7 +78,7 @@ public class SimulationData : MonoBehaviour
 
             // Calculate whether we should place a food item or not
             var random = Random.Range(0, 1000);
-            if (random <= ProbabilityNew)
+            if (random <= probabilityNew)
             {
                 Vector3 spawnPos = Random.insideUnitCircle.normalized;
                 spawnPos.z = spawnPos.y;

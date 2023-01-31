@@ -124,7 +124,7 @@ public class Robot : MonoBehaviour
 
         // Iniitalise Robot time thresholds
         thresholdResting = 0;
-        thresholdSearching = 20;
+        thresholdSearching = thresholdSearchingMax;
         randomWalkDirectionThreshold = 1;
         scanAreaThreshold = 0.25f;
 
