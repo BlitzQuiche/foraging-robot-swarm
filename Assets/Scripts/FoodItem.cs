@@ -11,7 +11,6 @@ public class FoodItem : MonoBehaviour
     {
         // Set fooditem to the fooditem layer
         gameObject.layer = (int)Robot.Layers.FoodItems;
-        Debug.Log(gameObject.layer.ToString());
 
         // Set RigidBody
         rb = GetComponent<Rigidbody>();

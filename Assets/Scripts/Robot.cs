@@ -8,6 +8,9 @@ public class Robot : MonoBehaviour
 {
     int id;
 
+    // Constant used to speedup the simulation
+    float speedUpConstant = 20;
+
     // Robot Positional Information 
     float maxSpeed = 5;
     float wanderStrength = 0.8f;
@@ -32,17 +35,15 @@ public class Robot : MonoBehaviour
     float avoidanceCheckThreshold = 2;
 
     // Robot Timings affected by cues
-    float searchingTime;
-    float thresholdSearching;
+    public float searchingTime;
+    public float thresholdSearching;
     float thresholdSearchingMin = 5;
     float thresholdSearchingMax = 50;
 
-    float restingTime;
-    float thresholdResting;
+    public float restingTime;
+    public float thresholdResting;
     float thresholdRestingMax = 100;
-
-    
-    
+   
     // Environental Cues
     // Avoidance Rest Increase
     float ari = 5;
@@ -57,13 +58,13 @@ public class Robot : MonoBehaviour
 
     // Social Cues
     // Teamate Success Rest Decrease
-    float tsrd = 2;
+    float tsrd = 20;
     // Teammate Failure Rest Increase
-    float tfri = 2;
+    float tfri = 40;
     // Teammate Success Search Increase
-    float tssi = 2;
+    float tssi = 10;
     // Teammate Failure Search Decrease
-    float tfsd = 2;
+    float tfsd = 10;
 
     public float successSocialCue;
     public float failureSocialCue;
@@ -122,16 +123,29 @@ public class Robot : MonoBehaviour
         // Initialise Robot layer
         gameObject.layer = (int)Layers.Robots;
 
-        // Iniitalise Robot time thresholds
+        // Initalise Robot time thresholds with speedup
         thresholdResting = 0;
-        thresholdSearching = thresholdSearchingMax;
-        randomWalkDirectionThreshold = 1;
-        scanAreaThreshold = 0.25f;
+        thresholdRestingMax = thresholdRestingMax / speedUpConstant;
+        thresholdSearching = thresholdSearchingMax / speedUpConstant;
+        thresholdSearchingMin = thresholdSearchingMin / speedUpConstant;
+        thresholdSearchingMax = thresholdSearchingMax / speedUpConstant;
+        randomWalkDirectionThreshold = 1 / speedUpConstant;
+        scanAreaThreshold = 0.25f / speedUpConstant;
+
+        ari = ari / speedUpConstant;
+        asd = asd / speedUpConstant;
+        fri = fri / speedUpConstant;
+        srd = srd / speedUpConstant;
+        tsrd = tsrd / speedUpConstant;
+        tfri = tfri / speedUpConstant;
+        tssi = tssi / speedUpConstant;
+        tfsd = tfsd / speedUpConstant;
 
         // Initalise robot times
         searchingTime = 0;
         restingTime = 0;
         randomWalkDirectionTime = 0;
+        scanAreaTime = 0;
 
         // Initialise State
         state = States.Resting;
@@ -159,15 +173,16 @@ public class Robot : MonoBehaviour
                 // If we have recived any social cues, make relevant updates ! 
                 if(successSocialCue > 0 || failureSocialCue > 0)
                 {
-                    Debug.Log($"Resting Robot social update, {successSocialCue}, {failureSocialCue}, br {thresholdResting}, bs {thresholdSearching}");
-                    thresholdResting = thresholdResting - (tsrd * successSocialCue) + (tfri * failureSocialCue);
+                    //Debug.Log($"Resting Robot social update, {successSocialCue}, {failureSocialCue}, br {thresholdResting}, bs {thresholdSearching}");
+                    thresholdResting   = thresholdResting - (tsrd * successSocialCue) + (tfri * failureSocialCue);
                     thresholdSearching = thresholdSearching + (tssi * successSocialCue) - (tfsd * failureSocialCue);
 
                     if (thresholdResting < 0) thresholdResting = 0;
+                    if (thresholdResting > thresholdRestingMax) thresholdResting = thresholdRestingMax;
                     if (thresholdSearching < thresholdSearchingMin) thresholdSearching = thresholdSearchingMin;
                     if (thresholdSearching > thresholdSearchingMax) thresholdSearching = thresholdSearchingMax;
 
-                    Debug.Log($"Resting Robot social update, ar {thresholdResting}, as {thresholdSearching}");
+                    //Debug.Log($"Resting Robot social update, ar {thresholdResting}, as {thresholdSearching}");
 
                     successSocialCue = 0;
                     failureSocialCue = 0;
@@ -199,8 +214,7 @@ public class Robot : MonoBehaviour
                     // If we proximity scan some obsticles, calculate and add a force in direction
                     // away from all of these obsticles
                     Avoid(collisions);
-
-                    
+                                        
                     // Keep moving in whichever direction we were moving previously.
                     MoveRobot(direction);
                     break;
@@ -229,7 +243,7 @@ public class Robot : MonoBehaviour
                     state = States.Homing;
                     simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
-                    Debug.Log("RandomWalk -> Homing");
+                    //Debug.Log("RandomWalk -> Homing");
                 }
 
                 // Are we searching in the home? 
@@ -250,7 +264,7 @@ public class Robot : MonoBehaviour
                     state = States.MoveToFood;
                     simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
-                    Debug.Log("RandomWalk -> MoveToFood");
+                    //Debug.Log("RandomWalk -> MoveToFood");
                     break;
                 }
 
@@ -272,7 +286,7 @@ public class Robot : MonoBehaviour
                     state = States.Homing;
                     simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
-                    Debug.Log("RandomWalk -> Homing");
+                    //Debug.Log("RandomWalk -> Homing");
                 }
 
                 // Have we lost sight of the food ?
@@ -291,7 +305,7 @@ public class Robot : MonoBehaviour
                 {
                     // Grab the food !
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
-                    Debug.Log("MoveToFood --> MoveToHome; Found some food!");
+                    //Debug.Log("MoveToFood --> MoveToHome; Found some food!");
 
                     // Broadcast social cue to tell everyone we have found some food! Hurray!
                     simulation.BroadcastSuccess(id);
@@ -325,7 +339,7 @@ public class Robot : MonoBehaviour
                     state = States.Homing;
                     simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
-                    Debug.Log("RandomWalk -> Homing");
+                    //Debug.Log("RandomWalk -> Homing");
                 }
 
                 // Have we scanned for long enough for the lost food?
@@ -335,7 +349,7 @@ public class Robot : MonoBehaviour
                     state = States.RandomWalk;
                     simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
-                    Debug.Log("ScanArea -> RandomWalk");
+                    //Debug.Log("ScanArea -> RandomWalk");
                 }
 
                 // Check if we can see the target food! 
@@ -380,7 +394,7 @@ public class Robot : MonoBehaviour
                 if (thresholdResting < 0) thresholdResting = 0;
                 
 
-                Debug.Log("MoveToHome --> Resting; Returned home and deposited food");
+                //Debug.Log("MoveToHome --> Resting; Returned home and deposited food");
 
                 // Let us rest
                 state = States.Resting;
@@ -414,7 +428,7 @@ public class Robot : MonoBehaviour
                 }
 
                 // Let us rest.
-                Debug.Log("Homing -> Resting");
+                //Debug.Log("Homing -> Resting");
                 state = States.Resting;
                 simulation.UpdateState(id, (int)state);
 
@@ -438,7 +452,7 @@ public class Robot : MonoBehaviour
                     break;
                 }
 
-                Debug.Log("LeavingHome -> RandomWalk");
+                //Debug.Log("LeavingHome -> RandomWalk");
 
                 // We have left the nest, let's start searching
                 state = States.RandomWalk;
@@ -590,14 +604,11 @@ public class Robot : MonoBehaviour
         // Since robot is acting in 2D space, it's direction in the Y axis is always 0.
         direction.y = 0f;
 
-        //Debug.Log("Direction: " + direction.ToString());
-
         looking = direction + transform.position;
         transform.LookAt(looking);
 
         // Calcultate and update robots velocity. 
-        velocity = direction.normalized * maxSpeed;
-        //Debug.Log("Velocity: " + velocity.ToString());
+        velocity = direction.normalized * maxSpeed * speedUpConstant;
 
         // Pass new velocity to robot controller.
         controller.Move(velocity);

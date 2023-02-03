@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
+using System.IO;
 
 public class SimulationData : MonoBehaviour
 {
@@ -8,30 +10,47 @@ public class SimulationData : MonoBehaviour
     public GameObject foodItemPrefab;
     public GameObject robotPrefab;
 
-    int currentSwarmEnergy;
-    int foodEnergyValue = 2000;
-
     // Dictionary of Robot ID to robot state.
     Dictionary<int, int> robotStates = new();
     // Robots!
     List<Robot> robots = new();
 
+    // Data collection coroutine
+    private IEnumerator dataCollectionCoroutine;
+
     int[] stateEnergyConsumption =
     {
         6, 8, 8, 8, 6, 12, 1, 6, 9
     };
+    int foodEnergyValue = 2000;
+    int currentSwarmEnergy;
+
+    // Dependent Variables
+    int foodItemsProduced;
+    int foodItemsCollected;
+    List<int> swarmEnergy = new();
+    List<int> numberForaging = new();
+    List<int> timeRecordings = new();
+    
+    // Variable used to mimic time in the simulation world in case of speedup
+    int simulationTime;
+
+    // Constant used to speedup the simulation
+    float speedUpConstant = 20; // Run the sim 10x faster
 
     // Main Menu Inputs
-    int robotNumber;
-    float pNew;
+    int robotNumberInput;
+    float pNewInput;
+    float simulationRuntimeThreshold;
 
-
-    int robotsForaging;
+    string outputFilename = "";
+    
+    // Food Spawning
     float probabilityNew;
-
     private float spawnFoodMinDistance = 12;
     private float spawnFoodMaxDistance = 40;
 
+    // Robot Spawnign
     private float spawnRobotMinDistance = 1;
     private float spawnRobotMaxDistance = 8;
 
@@ -42,42 +61,63 @@ public class SimulationData : MonoBehaviour
     void Start()
     {
         probabilityNew = 200;
-        robotNumber = MenuInput.NumRobotsInput;
-        pNew = MenuInput.ProbabilityNew;
-        Debug.Log(robotNumber);
-        SpawnRobots(robotNumber);
-        StartCoroutine(CollectDataAndSpawn());
+        simulationRuntimeThreshold = 10000;
+
+        robotNumberInput = MenuInput.NumRobotsInput;
+        pNewInput = MenuInput.ProbabilityNew;
+        SpawnRobots(robotNumberInput);
+
+        // Calculate value to use as probabilityNew
+        probabilityNew = pNewInput * 100;
+        Debug.Log(probabilityNew);
+
+        outputFilename = Application.dataPath + "/simulationData.csv";
+
+        dataCollectionCoroutine = CollectDataAndSpawn();
+        StartCoroutine(dataCollectionCoroutine);
     }
 
 
     void Update()
     {
+        if (simulationTime >= simulationRuntimeThreshold)
+        {
+            // Switch to end of simulation menu / scene
+            // Pause the simulation 
+            StopCoroutine(dataCollectionCoroutine);
+            // Export data as a csv
+            WriteCSV();
+            // Exit the sim
+            Application.Quit();
+            Debug.Log("SIMULATION COMPLETE!");
+        }
 
+        
         // Social cue pheromone like gradual decay 
         foreach (Robot robot in robots)
         {
-            robot.successSocialCue -= successAttenuation * Time.deltaTime;
+            robot.successSocialCue -= successAttenuation * Time.deltaTime * speedUpConstant;
             if (robot.successSocialCue < 0)
             {
                 robot.successSocialCue = 0;
             }
 
-            robot.failureSocialCue -= failureAttenuation * Time.deltaTime;
+            robot.failureSocialCue -= failureAttenuation * Time.deltaTime * speedUpConstant;
             if (robot.failureSocialCue < 0)
             {
                 robot.failureSocialCue = 0;
             }
         }
+        
     }
 
     IEnumerator CollectDataAndSpawn()
     {
         while (true)
         {
-            yield return new WaitForSeconds(1f);
-
+            yield return new WaitForSeconds(1f / speedUpConstant);
             // Calculate whether we should place a food item or not
-            var random = Random.Range(0, 1000);
+            var random = Random.Range(0, 100);
             if (random <= probabilityNew)
             {
                 Vector3 spawnPos = Random.insideUnitCircle.normalized;
@@ -86,20 +126,23 @@ public class SimulationData : MonoBehaviour
                 spawnPos *= Random.Range(spawnFoodMinDistance, spawnFoodMaxDistance);
 
                 Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
+                foodItemsProduced += 1;
             }
 
             // Collecting Robot energy data
             var energyUsed = 0;
 
             foreach (KeyValuePair<int, int> kvp in robotStates)
-            {
-                //string message = string.Format("Robot ID = {0}, State = {1}, EnergyConsumed = {2},Time = {3}", kvp.Key, kvp.Value, stateEnergyConsumption[kvp.Value], Time.time.ToString());
-                //Debug.Log(message);
+            { 
                 energyUsed += stateEnergyConsumption[kvp.Value];
             }
 
             currentSwarmEnergy -= energyUsed;
+            swarmEnergy.Add(currentSwarmEnergy);
 
+            // 1 Second has passed in simulation time
+            simulationTime += 1;
+            timeRecordings.Add(simulationTime);
         }
     }
 
@@ -128,6 +171,7 @@ public class SimulationData : MonoBehaviour
     public void DepositFood()
     {
         currentSwarmEnergy += foodEnergyValue;
+        foodItemsCollected += 1;
     }
 
     public void UseEnergy(int energyUsed)
@@ -161,6 +205,20 @@ public class SimulationData : MonoBehaviour
                 robot.IncrementFailureSocialCue();
             }
         }
+    }
+
+    private void WriteCSV()
+    {
+        TextWriter tw = new StreamWriter(outputFilename, false);
+        tw.WriteLine("Time,Energy");
+        tw.Close();
+
+        tw = new StreamWriter(outputFilename, true);
+        for(int i = 0; i < timeRecordings.Count; i++)
+        {
+            tw.WriteLine(timeRecordings[i] + "," + swarmEnergy[i]);
+        }
+        tw.Close();
     }
 
     private void OnGUI()
