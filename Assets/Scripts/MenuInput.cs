@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MenuInput : MonoBehaviour
@@ -7,7 +5,7 @@ public class MenuInput : MonoBehaviour
     public static int NumRobotsInput = 6;
     public static float ProbabilityNew = 0.03f;
 
-    
+
     public void ParseNumberOfRobotsString(string s)
     {
         try
@@ -19,7 +17,7 @@ public class MenuInput : MonoBehaviour
             NumRobotsInput = 6;
             Debug.Log("Robot Number Input Error: Enter an Integer value");
         }
-        
+
         Debug.Log($"Number Of Robots Input: {NumRobotsInput}");
     }
 

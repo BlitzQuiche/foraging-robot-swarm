@@ -1,8 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using System.Linq;
 using System.IO;
+using UnityEngine;
 
 public class SimulationData : MonoBehaviour
 {
@@ -30,7 +29,7 @@ public class SimulationData : MonoBehaviour
     List<int> swarmEnergy = new();
     List<int> searchingRecordings = new();
     List<int> timeRecordings = new();
-    
+
     // Variable used to mimic time in the simulation world in case of speedup
     int simulationTime;
 
@@ -43,7 +42,7 @@ public class SimulationData : MonoBehaviour
     float simulationRuntimeThreshold;
 
     string outputFilename = "";
-    
+
     // Food Spawning
     float probabilityNew;
     private float spawnFoodMinDistance = 12;
@@ -90,7 +89,7 @@ public class SimulationData : MonoBehaviour
             Debug.Log("SIMULATION COMPLETE!");
         }
 
-        
+
         // Social cue pheromone like gradual decay 
         foreach (Robot robot in robots)
         {
@@ -106,7 +105,7 @@ public class SimulationData : MonoBehaviour
                 robot.failureSocialCue = 0;
             }
         }
-        
+
     }
 
     IEnumerator CollectDataAndSpawn()
@@ -140,7 +139,7 @@ public class SimulationData : MonoBehaviour
                 {
                     robotsSearching += 1;
                 }
-                
+
             }
 
             // Swarm energy and searching robots analytics.
@@ -158,7 +157,7 @@ public class SimulationData : MonoBehaviour
     // Method to initalise a number of robots in the nest. 
     public void SpawnRobots(int numberOfRobots)
     {
-        for(int i = 0; i < numberOfRobots; i++)
+        for (int i = 0; i < numberOfRobots; i++)
         {
             // Calculate a random point in nest to spawn.
             Vector3 spawnPos = Random.insideUnitCircle.normalized;
@@ -181,7 +180,7 @@ public class SimulationData : MonoBehaviour
     // Allows robots to tell others if they find food. Success social Cue!
     public void BroadcastSuccess(int informingRobotId)
     {
-        foreach(var robot in robots)
+        foreach (var robot in robots)
         {
             // Check to ensure current key does not represent the informing robot!
             if (robot.GetInstanceID() != informingRobotId)
@@ -213,7 +212,7 @@ public class SimulationData : MonoBehaviour
         tw.Close();
 
         tw = new StreamWriter(outputFilename, true);
-        for(int i = 0; i < timeRecordings.Count; i++)
+        for (int i = 0; i < timeRecordings.Count; i++)
         {
             tw.WriteLine(timeRecordings[i] + "," + swarmEnergy[i] + "," + searchingRecordings[i]);
         }
