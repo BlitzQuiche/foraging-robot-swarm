@@ -12,7 +12,7 @@ public class Robot : MonoBehaviour
     float speedUpConstant = 20;
 
     // Robot Positional Information 
-    float maxSpeed = 5;
+    float maxSpeed = 3;
     float wanderStrength = 0.8f;
 
     Vector3 velocity;
@@ -31,8 +31,7 @@ public class Robot : MonoBehaviour
     float randomWalkDirectionThreshold;
     float scanAreaTime;
     float scanAreaThreshold;
-    float avoidanceCheckTime;
-    float avoidanceCheckThreshold = 2;
+
 
     // Robot Timings affected by cues
     public float searchingTime;
@@ -73,7 +72,7 @@ public class Robot : MonoBehaviour
     float effort;
 
     // Current robot state
-    enum States
+    public enum States
     {
         LeavingHome,
         RandomWalk,
@@ -156,9 +155,6 @@ public class Robot : MonoBehaviour
         // Get the simulationData instance
         simulation = GameObject.Find("World").GetComponent<SimulationData>();
 
-        // Initialise Robot state in simulation data
-        simulation.UpdateState(id, (int)state);
-
     }
 
     // Update is called once per frame
@@ -198,7 +194,6 @@ public class Robot : MonoBehaviour
                     direction = GetRandomDirection();
 
                     state = States.LeavingHome;
-                    simulation.UpdateState(id, (int)state);
 
                     ChangeAntenaColor(colours[(int)state]);
 
@@ -223,7 +218,6 @@ public class Robot : MonoBehaviour
                 // We no longer need to avoid obsticles !
                 // Return to the previous state we were in.
                 state = avoidancePreviousState;
-                simulation.UpdateState(id, (int)state);
                 ChangeAntenaColor(avoidancePreviousColour);
                 break;
 
@@ -241,7 +235,6 @@ public class Robot : MonoBehaviour
 
                     // Let's go home.
                     state = States.Homing;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     //Debug.Log("RandomWalk -> Homing");
                 }
@@ -262,7 +255,6 @@ public class Robot : MonoBehaviour
                     // We have found a food item! 
                     // Let's move towards it
                     state = States.MoveToFood;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     //Debug.Log("RandomWalk -> MoveToFood");
                     break;
@@ -284,7 +276,6 @@ public class Robot : MonoBehaviour
 
                     // Let's go home.
                     state = States.Homing;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     //Debug.Log("RandomWalk -> Homing");
                 }
@@ -294,7 +285,6 @@ public class Robot : MonoBehaviour
                 {
                     // We have lost the food! Scan the area again to find it. 
                     state = States.ScanArea;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     StopRobot();
                     break;
@@ -312,7 +302,6 @@ public class Robot : MonoBehaviour
 
                     // Update our state and start moving home.
                     state = States.MoveToHome;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     break;
                 }
@@ -337,7 +326,6 @@ public class Robot : MonoBehaviour
 
                     // Let's go home.
                     state = States.Homing;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     //Debug.Log("RandomWalk -> Homing");
                 }
@@ -347,7 +335,6 @@ public class Robot : MonoBehaviour
                 {
                     // Let's look somewhere else instead
                     state = States.RandomWalk;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     //Debug.Log("ScanArea -> RandomWalk");
                 }
@@ -357,7 +344,6 @@ public class Robot : MonoBehaviour
                 {
                     // We have re-found the food! Let's move towards it!. 
                     state = States.MoveToFood;
-                    simulation.UpdateState(id, (int)state);
                     ChangeAntenaColor(colours[(int)state]);
                     break;
                 }
@@ -398,7 +384,6 @@ public class Robot : MonoBehaviour
 
                 // Let us rest
                 state = States.Resting;
-                simulation.UpdateState(id, (int)state);
                 ChangeAntenaColor(colours[(int)state]);
 
                 StopRobot();
@@ -430,7 +415,6 @@ public class Robot : MonoBehaviour
                 // Let us rest.
                 //Debug.Log("Homing -> Resting");
                 state = States.Resting;
-                simulation.UpdateState(id, (int)state);
 
                 // White means resting.
                 ChangeAntenaColor(colours[(int)state]);
@@ -456,7 +440,6 @@ public class Robot : MonoBehaviour
 
                 // We have left the nest, let's start searching
                 state = States.RandomWalk;
-                simulation.UpdateState(id, (int)state);
                 searchingTime = 0;
 
                 // Blue means searching. 
@@ -495,7 +478,6 @@ public class Robot : MonoBehaviour
             avoidancePreviousState = state;
 
             state = States.Avoidance;
-            simulation.UpdateState(id, (int)state);
             ChangeAntenaColor(colours[(int)state]);
 
             
@@ -504,15 +486,22 @@ public class Robot : MonoBehaviour
         return false;
     }
 
+    // Incrememnt success cue due to another robots success broadcast.
     public void IncrementSuccessSocialCue()
     {
         successSocialCue += 1;
     }
 
+    // Incrememnt failure cue due to another robots failure broadcast.
     public void IncrementFailureSocialCue()
     {
         failureSocialCue += 1;
     }
+
+    public States GetState()
+    {
+        return state;
+    } 
 
     // Avoidance algorithm
     // Calculates opposite direction from all potential collisons.

@@ -10,8 +10,6 @@ public class SimulationData : MonoBehaviour
     public GameObject foodItemPrefab;
     public GameObject robotPrefab;
 
-    // Dictionary of Robot ID to robot state.
-    Dictionary<int, int> robotStates = new();
     // Robots!
     List<Robot> robots = new();
 
@@ -24,12 +22,13 @@ public class SimulationData : MonoBehaviour
     };
     int foodEnergyValue = 2000;
     int currentSwarmEnergy;
+    int currentSearching;
 
     // Dependent Variables
     int foodItemsProduced;
     int foodItemsCollected;
     List<int> swarmEnergy = new();
-    List<int> numberForaging = new();
+    List<int> searchingRecordings = new();
     List<int> timeRecordings = new();
     
     // Variable used to mimic time in the simulation world in case of speedup
@@ -60,8 +59,7 @@ public class SimulationData : MonoBehaviour
 
     void Start()
     {
-        probabilityNew = 200;
-        simulationRuntimeThreshold = 10000;
+        simulationRuntimeThreshold = 5000;
 
         robotNumberInput = MenuInput.NumRobotsInput;
         pNewInput = MenuInput.ProbabilityNew;
@@ -131,14 +129,25 @@ public class SimulationData : MonoBehaviour
 
             // Collecting Robot energy data
             var energyUsed = 0;
-
-            foreach (KeyValuePair<int, int> kvp in robotStates)
-            { 
-                energyUsed += stateEnergyConsumption[kvp.Value];
+            var robotsSearching = 0;
+            foreach (Robot robot in robots)
+            {
+                var state = robot.GetState();
+                energyUsed += stateEnergyConsumption[(int)robot.GetState()];
+                if (state == Robot.States.RandomWalk |
+                    state == Robot.States.MoveToFood |
+                    state == Robot.States.ScanArea)
+                {
+                    robotsSearching += 1;
+                }
+                
             }
 
+            // Swarm energy and searching robots analytics.
             currentSwarmEnergy -= energyUsed;
+            currentSearching = robotsSearching;
             swarmEnergy.Add(currentSwarmEnergy);
+            searchingRecordings.Add(currentSearching);
 
             // 1 Second has passed in simulation time
             simulationTime += 1;
@@ -163,20 +172,10 @@ public class SimulationData : MonoBehaviour
         }
     }
 
-    public void UpdateState(int robotId, int robotState)
-    {
-        robotStates[robotId] = robotState;
-    }
-
     public void DepositFood()
     {
         currentSwarmEnergy += foodEnergyValue;
         foodItemsCollected += 1;
-    }
-
-    public void UseEnergy(int energyUsed)
-    {
-        currentSwarmEnergy -= energyUsed;
     }
 
     // Allows robots to tell others if they find food. Success social Cue!
@@ -210,13 +209,13 @@ public class SimulationData : MonoBehaviour
     private void WriteCSV()
     {
         TextWriter tw = new StreamWriter(outputFilename, false);
-        tw.WriteLine("Time,Energy");
+        tw.WriteLine("Time,Energy,Searching");
         tw.Close();
 
         tw = new StreamWriter(outputFilename, true);
         for(int i = 0; i < timeRecordings.Count; i++)
         {
-            tw.WriteLine(timeRecordings[i] + "," + swarmEnergy[i]);
+            tw.WriteLine(timeRecordings[i] + "," + swarmEnergy[i] + "," + searchingRecordings[i]);
         }
         tw.Close();
     }
@@ -224,8 +223,16 @@ public class SimulationData : MonoBehaviour
     private void OnGUI()
     {
         // Make a background box
-        GUI.Box(new Rect(10, 10, 200, 50), "Current Swarm Energy");
+        GUI.Box(new Rect(10, 10, 200, 40), "Current Swarm Energy");
         // Write Current swarm energy to box
         GUI.Box(new Rect(60, 30, 80, 20), currentSwarmEnergy.ToString());
+
+        GUI.Box(new Rect(10, 60, 200, 40), "Simulation Time");
+
+        GUI.Box(new Rect(60, 80, 80, 20), simulationTime.ToString());
+
+        GUI.Box(new Rect(10, 110, 200, 40), "Number of Robots Searching");
+
+        GUI.Box(new Rect(60, 130, 80, 20), currentSearching.ToString());
     }
 }
