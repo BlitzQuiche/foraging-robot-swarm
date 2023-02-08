@@ -19,5 +19,6 @@ public class CameraSwitch : MonoBehaviour
             cam1.enabled = !cam1.enabled;
             cam2.enabled = !cam2.enabled;
         }
+
     }
 }

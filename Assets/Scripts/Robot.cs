@@ -20,8 +20,8 @@ public class Robot : MonoBehaviour
     Vector3 looking;
 
     // Scanner
-    float foodScanRadius = 5;
-    float proximityScanRadius = 2.5f;
+    float foodScanRadius = 40;
+    float proximityScanRadius = 8f;
 
     // Target food item
     Collider targetFoodItem;
@@ -36,12 +36,12 @@ public class Robot : MonoBehaviour
     // Robot Timings affected by cues
     public float searchingTime;
     public float thresholdSearching;
-    float thresholdSearchingMin = 5;
-    float thresholdSearchingMax = 50;
+    float thresholdSearchingMin = 20;
+    float thresholdSearchingMax = 200;
 
     public float restingTime;
     public float thresholdResting;
-    float thresholdRestingMax = 100;
+    float thresholdRestingMax = 2000;
 
     // Environental Cues
     // Avoidance Rest Increase
@@ -340,7 +340,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.MoveToHome:
-                if (Vector3.Distance(nestPosition, transform.position) > 10)
+                if (Vector3.Distance(nestPosition, transform.position) > 20)
                 {
                     // Do colision avoidance if we are on our way back to the nest.
                     if (CheckAvoidance()) break;
@@ -348,7 +348,7 @@ public class Robot : MonoBehaviour
                     MoveRobot((nestPosition - transform.position).normalized);
                     break;
                 }
-                else if (Vector3.Distance(nestPosition, transform.position) > 6)
+                else if (Vector3.Distance(nestPosition, transform.position) > 3)
                 {
                     // Turn off colision avoidance when we are entering the nest
                     MoveRobot((nestPosition - transform.position).normalized);
@@ -374,7 +374,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.Homing:
-                if (Vector3.Distance(nestPosition, transform.position) > 10)
+                if (Vector3.Distance(nestPosition, transform.position) > 20)
                 {
                     // Do colision avoidance if we are on our way back to the nest.
                     if (CheckAvoidance()) break;
@@ -382,7 +382,7 @@ public class Robot : MonoBehaviour
                     MoveRobot((nestPosition - transform.position).normalized);
                     break;
                 }
-                else if (Vector3.Distance(nestPosition, transform.position) > 6)
+                else if (Vector3.Distance(nestPosition, transform.position) > 3)
                 {
                     // Turn off colision avoidance when we are entering the nest
                     MoveRobot((nestPosition - transform.position).normalized);
@@ -412,7 +412,7 @@ public class Robot : MonoBehaviour
                 // Assumption that robots can find their own way to the edge of nest 
                 // without bumping into other robots. 
 
-                if (Vector3.Distance(nestPosition, transform.position) < 12)
+                if (Vector3.Distance(nestPosition, transform.position) < 20)
                 {
                     // Move robot in whichever direction we were previously going to leave the nest.
                     MoveRobot(direction);

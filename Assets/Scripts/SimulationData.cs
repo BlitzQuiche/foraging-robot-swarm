@@ -46,7 +46,7 @@ public class SimulationData : MonoBehaviour
     // Food Spawning
     float probabilityNew;
     private float spawnFoodMinDistance = 12;
-    private float spawnFoodMaxDistance = 40;
+    private float spawnFoodMaxDistance = 150;
 
     // Robot Spawnign
     private float spawnRobotMinDistance = 1;
@@ -169,6 +169,7 @@ public class SimulationData : MonoBehaviour
             Robot r = Instantiate(robotPrefab, spawnPos, Quaternion.identity).GetComponent<Robot>();
             robots.Add(r);
         }
+        OrbitRobots.AddRobots(robots);
     }
 
     public void DepositFood()
