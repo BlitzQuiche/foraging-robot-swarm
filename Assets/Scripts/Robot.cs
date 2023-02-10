@@ -9,7 +9,7 @@ public class Robot : MonoBehaviour
     int id;
 
     // Constant used to speedup the simulation
-    float speedUpConstant = 20;
+    float speedUpConstant;
 
     // Robot Positional Information 
     float maxSpeed = 3;
@@ -22,6 +22,7 @@ public class Robot : MonoBehaviour
     // Scanner
     float foodScanRadius = 40;
     float proximityScanRadius = 8f;
+    float grabDistance = 1.5f;
 
     // Target food item
     Collider targetFoodItem;
@@ -118,6 +119,9 @@ public class Robot : MonoBehaviour
         controller = GetComponent<RobotController>();
         grabber = GetComponent<GrabSystem>();
         nestPosition = GameObject.Find("Nest").transform.position;
+
+        // Speedup Menu Input
+        speedUpConstant = MenuInput.SpeedUpInput;
 
         // Initialise Robot layer
         gameObject.layer = (int)Layers.Robots;
@@ -281,7 +285,7 @@ public class Robot : MonoBehaviour
                 }
 
                 // Are we close enough to grab the food?
-                if (Vector3.Distance(targetFoodItem.transform.position, transform.position) < 1.5)
+                if (Vector3.Distance(targetFoodItem.transform.position, transform.position) < grabDistance)
                 {
                     // Grab the food !
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());

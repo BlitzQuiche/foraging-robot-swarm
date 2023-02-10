@@ -34,7 +34,7 @@ public class SimulationData : MonoBehaviour
     int simulationTime;
 
     // Constant used to speedup the simulation
-    float speedUpConstant = 20; // Run the sim 10x faster
+    float speedUpConstant; // Run the sim 10x faster
 
     // Main Menu Inputs
     int robotNumberInput;
@@ -58,10 +58,11 @@ public class SimulationData : MonoBehaviour
 
     void Start()
     {
-        simulationRuntimeThreshold = 5000;
-
+        simulationRuntimeThreshold = MenuInput.SimulationRuntime;
         robotNumberInput = MenuInput.NumRobotsInput;
         pNewInput = MenuInput.ProbabilityNew;
+        speedUpConstant = MenuInput.SpeedUpInput;
+
         SpawnRobots(robotNumberInput);
 
         // Calculate value to use as probabilityNew
