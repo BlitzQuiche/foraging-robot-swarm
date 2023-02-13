@@ -70,7 +70,7 @@ public class Robot : MonoBehaviour
     public float failureSocialCue;
 
     // Robot Effort
-    float effort;
+    public float effort = 2;
 
     // Current robot state
     public enum States
@@ -575,7 +575,7 @@ public class Robot : MonoBehaviour
         transform.LookAt(looking);
 
         // Calcultate and update robots velocity. 
-        velocity = direction.normalized * maxSpeed * speedUpConstant;
+        velocity = direction.normalized * maxSpeed * speedUpConstant * effort;
 
         // Pass new velocity to robot controller.
         controller.Move(velocity);

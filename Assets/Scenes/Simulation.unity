@@ -220,9 +220,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c6dd8cd253ff7344a48588e8b15bba6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  turnSpeed: 4
-  height: 10
-  distance: 30
 --- !u!1 &206559482
 GameObject:
   m_ObjectHideFlags: 0

@@ -20,13 +20,13 @@ public class SimulationData : MonoBehaviour
         6, 8, 8, 8, 6, 12, 1, 6, 9
     };
     int foodEnergyValue = 2000;
-    int currentSwarmEnergy;
+    float currentSwarmEnergy;
     int currentSearching;
 
     // Dependent Variables
     int foodItemsProduced;
     int foodItemsCollected;
-    List<int> swarmEnergy = new();
+    List<float> swarmEnergy = new();
     List<int> searchingRecordings = new();
     List<int> timeRecordings = new();
 
@@ -128,12 +128,23 @@ public class SimulationData : MonoBehaviour
             }
 
             // Collecting Robot energy data
-            var energyUsed = 0;
+            float energyUsed = 0;
             var robotsSearching = 0;
             foreach (Robot robot in robots)
             {
                 var state = robot.GetState();
-                energyUsed += stateEnergyConsumption[(int)robot.GetState()];
+                
+                // Multiply state consumption by effort to account for increased energy costs for
+                // higher effort. Robot isn't moving when resting or scanarea, so no cost increase.
+                if (state == Robot.States.Resting |
+                    state == Robot.States.ScanArea)
+                {
+                    energyUsed += stateEnergyConsumption[(int)state];
+                } else
+                {
+                    energyUsed += stateEnergyConsumption[(int)state] * robot.effort;
+                }
+                
                 if (state == Robot.States.RandomWalk |
                     state == Robot.States.MoveToFood |
                     state == Robot.States.ScanArea)
