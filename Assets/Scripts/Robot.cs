@@ -21,7 +21,7 @@ public class Robot : MonoBehaviour
 
     // Scanner
     float foodScanRadius = 40;
-    float proximityScanRadius = 8f;
+    float proximityScanRadius = 4f;
     float grabDistance = 1.5f;
 
     // Target food item
