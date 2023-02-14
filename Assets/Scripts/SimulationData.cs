@@ -34,7 +34,7 @@ public class SimulationData : MonoBehaviour
     int simulationTime;
 
     // Constant used to speedup the simulation
-    float speedUpConstant; // Run the sim 10x faster
+    float speedUpConstant; // Run the sim x faster
 
     // Main Menu Inputs
     int robotNumberInput;
@@ -133,18 +133,19 @@ public class SimulationData : MonoBehaviour
             foreach (Robot robot in robots)
             {
                 var state = robot.GetState();
-                
+                int energyConsumption = stateEnergyConsumption[(int)state];
+
                 // Multiply state consumption by effort to account for increased energy costs for
                 // higher effort. Robot isn't moving when resting or scanarea, so no cost increase.
                 if (state == Robot.States.Resting |
                     state == Robot.States.ScanArea)
                 {
-                    energyUsed += stateEnergyConsumption[(int)state];
+                    energyUsed += energyConsumption;
                 } else
                 {
-                    energyUsed += stateEnergyConsumption[(int)state] * robot.effort;
+                    energyUsed += energyConsumption * robot.Effort;
                 }
-                
+
                 if (state == Robot.States.RandomWalk |
                     state == Robot.States.MoveToFood |
                     state == Robot.States.ScanArea)

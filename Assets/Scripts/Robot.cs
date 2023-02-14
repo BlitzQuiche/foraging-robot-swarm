@@ -70,7 +70,8 @@ public class Robot : MonoBehaviour
     public float failureSocialCue;
 
     // Robot Effort
-    public float effort = 2;
+    float effort;
+    public float Effort { get => effort; set => effort = value; }
 
     // Current robot state
     public enum States
@@ -122,6 +123,9 @@ public class Robot : MonoBehaviour
 
         // Speedup Menu Input
         speedUpConstant = MenuInput.SpeedUpInput;
+
+        // Effort
+        effort = 1f;
 
         // Initialise Robot layer
         gameObject.layer = (int)Layers.Robots;
