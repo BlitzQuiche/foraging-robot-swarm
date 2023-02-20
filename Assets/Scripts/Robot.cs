@@ -21,6 +21,7 @@ public class Robot : MonoBehaviour
 
     // Scanner
     float foodScanRadius = 40;
+    float foodScanFOV = 30;
     float proximityScanRadius = 4f;
     float grabDistance = 1.5f;
 
@@ -525,10 +526,10 @@ public class Robot : MonoBehaviour
     private Collider ScanAndTargetFood()
     {
         var visibleFoodItems = ScanForFood();
-        if (visibleFoodItems.Length > 0)
+        if (visibleFoodItems.Count > 0)
         {
             // We can see some food! Pick one at random.
-            Collider food = visibleFoodItems[Random.Range(0, visibleFoodItems.Length)];
+            Collider food = visibleFoodItems[Random.Range(0, visibleFoodItems.Count)];
             return food;
         }
 
@@ -537,9 +538,25 @@ public class Robot : MonoBehaviour
     }
 
     // Scan for food items in robots scan radius.
-    private Collider[] ScanForFood()
+    private List<Collider> ScanForFood()
     {
-        return Physics.OverlapSphere(transform.position, foodScanRadius, LayerMask.GetMask("FoodItems"));
+        List<Collider> visibleFoodItems = new();
+
+        // OverlapSphere returns all food items that are visible over 360 degrees
+        Collider[] foodItemsInRad = Physics.OverlapSphere(transform.position, foodScanRadius, LayerMask.GetMask("FoodItems"));
+        for (int i = 0; i < foodItemsInRad.Length; i++)
+        {
+            // Calculate robot's direction towards the food item.
+            Vector3 targetDir = foodItemsInRad[i].transform.position - transform.position;
+            targetDir.y = 0;
+            float angle = Vector3.Angle(transform.forward, targetDir);
+            if (angle <= foodScanFOV)
+            {
+                visibleFoodItems.Add(foodItemsInRad[i]);
+            }
+        }
+
+        return visibleFoodItems;
     }
 
 
@@ -598,9 +615,15 @@ public class Robot : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(transform.forward + transform.position, transform.forward * 4 + transform.position);
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, foodScanRadius);
+        Gizmos.DrawLine(Quaternion.Euler(0, -foodScanFOV, 0) * transform.forward + transform.position, Quaternion.Euler(0, -foodScanFOV, 0) * transform.forward * foodScanRadius + transform.position);
+        Gizmos.DrawLine(Quaternion.Euler(0, foodScanFOV, 0) * transform.forward + transform.position, Quaternion.Euler(0, foodScanFOV, 0) * transform.forward * foodScanRadius + transform.position);
+
+        //Gizmos.DrawWireSphere(transform.position, foodScanRadius);
         Gizmos.color = Color.black;
-        Gizmos.DrawWireSphere(transform.position, proximityScanRadius);
+        //Gizmos.DrawWireSphere(transform.position, proximityScanRadius);
+        //Gizmos.DrawWireSphere(transform.position, grabDistance);
     }
 }
