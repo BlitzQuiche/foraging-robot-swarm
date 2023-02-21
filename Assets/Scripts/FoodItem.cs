@@ -18,6 +18,6 @@ public class FoodItem : MonoBehaviour
 
     public void RemoveFoodItem()
     {
-        Destroy(gameObject, 2f);
+        Destroy(gameObject);
     }
 }

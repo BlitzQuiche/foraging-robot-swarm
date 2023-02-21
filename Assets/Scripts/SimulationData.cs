@@ -66,8 +66,11 @@ public class SimulationData : MonoBehaviour
         SpawnRobots(robotNumberInput);
 
         // Calculate value to use as probabilityNew
-        probabilityNew = pNewInput * 100;
+        probabilityNew = 1 - pNewInput;
         Debug.Log(probabilityNew);
+
+        Time.timeScale = speedUpConstant;
+        Time.fixedDeltaTime *= Time.timeScale; 
 
         outputFilename = Application.dataPath + "/simulationData.csv";
 
@@ -94,13 +97,13 @@ public class SimulationData : MonoBehaviour
         // Social cue pheromone like gradual decay 
         foreach (Robot robot in robots)
         {
-            robot.successSocialCue -= successAttenuation * Time.deltaTime * speedUpConstant;
+            robot.successSocialCue -= successAttenuation * Time.deltaTime;
             if (robot.successSocialCue < 0)
             {
                 robot.successSocialCue = 0;
             }
 
-            robot.failureSocialCue -= failureAttenuation * Time.deltaTime * speedUpConstant;
+            robot.failureSocialCue -= failureAttenuation * Time.deltaTime;
             if (robot.failureSocialCue < 0)
             {
                 robot.failureSocialCue = 0;
@@ -113,15 +116,14 @@ public class SimulationData : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(1f / speedUpConstant);
+            yield return new WaitForSeconds(1f);
             // Calculate whether we should place a food item or not
-            var random = Random.Range(0, 100);
-            if (random <= probabilityNew)
+            if (Random.value >= probabilityNew)
             {
                 Vector3 spawnPos = Random.insideUnitCircle.normalized;
                 spawnPos.z = spawnPos.y;
-                spawnPos.y = 0.01f;
                 spawnPos *= Random.Range(spawnFoodMinDistance, spawnFoodMaxDistance);
+                spawnPos.y = 1f;
 
                 Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
                 foodItemsProduced += 1;
@@ -231,6 +233,9 @@ public class SimulationData : MonoBehaviour
             tw.WriteLine(timeRecordings[i] + "," + swarmEnergy[i] + "," + searchingRecordings[i]);
         }
         tw.Close();
+
+        Debug.Log(foodItemsProduced);
+        Debug.Log(foodItemsCollected);
     }
 
     private void OnGUI()

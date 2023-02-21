@@ -6,6 +6,7 @@ public class MenuInput : MonoBehaviour
     public static float ProbabilityNew = 0.03f;
     public static int SpeedUpInput = 1;
     public static int SimulationRuntime = 1000;
+    public static float Effort = 1;
 
     public void ParseNumberOfRobotsString(string s)
     {
@@ -35,6 +36,21 @@ public class MenuInput : MonoBehaviour
         }
 
         Debug.Log($"SpeedUp Input: {SpeedUpInput}");
+    }
+
+    public void ParseEffortString(string s)
+    {
+        try
+        {
+            Effort = float.Parse(s);
+        }
+        catch (System.FormatException)
+        {
+            Effort = 1;
+            Debug.Log("Effort Input Error: Enter an Integer value");
+        }
+
+        Debug.Log($"Effort Input: {Effort}");
     }
 
     public void ParseSimTimeString(string s)

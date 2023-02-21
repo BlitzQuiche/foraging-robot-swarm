@@ -126,28 +126,16 @@ public class Robot : MonoBehaviour
         speedUpConstant = MenuInput.SpeedUpInput;
 
         // Effort
-        effort = 1f;
+        effort = MenuInput.Effort;
 
         // Initialise Robot layer
         gameObject.layer = (int)Layers.Robots;
 
-        // Initalise Robot time thresholds with speedup
+        // Initalise Robot time thresholds 
         thresholdResting = 0;
-        thresholdRestingMax = thresholdRestingMax / speedUpConstant;
-        thresholdSearching = thresholdSearchingMax / speedUpConstant;
-        thresholdSearchingMin = thresholdSearchingMin / speedUpConstant;
-        thresholdSearchingMax = thresholdSearchingMax / speedUpConstant;
-        randomWalkDirectionThreshold = 1 / speedUpConstant;
-        scanAreaThreshold = 0.25f / speedUpConstant;
-
-        ari = ari / speedUpConstant;
-        asd = asd / speedUpConstant;
-        fri = fri / speedUpConstant;
-        srd = srd / speedUpConstant;
-        tsrd = tsrd / speedUpConstant;
-        tfri = tfri / speedUpConstant;
-        tssi = tssi / speedUpConstant;
-        tfsd = tfsd / speedUpConstant;
+        thresholdSearching = thresholdSearchingMax;
+        randomWalkDirectionThreshold = 1;
+        scanAreaThreshold = 0.25f;
 
         // Initalise robot times
         searchingTime = 0;
@@ -596,7 +584,7 @@ public class Robot : MonoBehaviour
         transform.LookAt(looking);
 
         // Calcultate and update robots velocity. 
-        velocity = direction.normalized * maxSpeed * speedUpConstant * effort;
+        velocity = direction.normalized * maxSpeed * effort;
 
         // Pass new velocity to robot controller.
         controller.Move(velocity);
