@@ -8,9 +8,6 @@ public class Robot : MonoBehaviour
 {
     int id;
 
-    // Constant used to speedup the simulation
-    float speedUpConstant;
-
     // Robot Positional Information 
     float maxSpeed = 3;
     float wanderStrength = 0.8f;
@@ -122,9 +119,6 @@ public class Robot : MonoBehaviour
         grabber = GetComponent<GrabSystem>();
         nestPosition = GameObject.Find("Nest").transform.position;
 
-        // Speedup Menu Input
-        speedUpConstant = MenuInput.SpeedUpInput;
-
         // Effort
         effort = MenuInput.Effort;
 
@@ -174,6 +168,7 @@ public class Robot : MonoBehaviour
                     if (thresholdSearching < thresholdSearchingMin) thresholdSearching = thresholdSearchingMin;
                     if (thresholdSearching > thresholdSearchingMax) thresholdSearching = thresholdSearchingMax;
 
+
                     successSocialCue = 0;
                     failureSocialCue = 0;
                 }
@@ -220,9 +215,6 @@ public class Robot : MonoBehaviour
                 // Have we ran out of time to look for food? 
                 if (searchingTime > thresholdSearching)
                 {
-                    // Broadcast to everyone that we have failed to find any food. 
-                    simulation.BroadcastFailure(id);
-
                     // Let's go home.
                     state = States.Homing;
                     ChangeAntenaColor(colours[(int)state]);
@@ -282,9 +274,6 @@ public class Robot : MonoBehaviour
                 {
                     // Grab the food !
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
-
-                    // Broadcast social cue to tell everyone we have found some food! Hurray!
-                    simulation.BroadcastSuccess(id);
 
                     // Update our state and start moving home.
                     state = States.MoveToHome;
@@ -359,6 +348,9 @@ public class Robot : MonoBehaviour
                 // Tell the simulation that we have deposited some food
                 simulation.DepositFood();
 
+                // Broadcast social cue to tell everyone we have found some food! Hurray!
+                simulation.BroadcastSuccess(id);
+
                 // Update resting threshold with interal cues
                 thresholdResting -= srd;
                 if (thresholdResting < 0) thresholdResting = 0;
@@ -392,6 +384,9 @@ public class Robot : MonoBehaviour
                 {
                     thresholdResting = thresholdRestingMax;
                 }
+
+                // Broadcast to everyone that we have failed to find any food. 
+                simulation.BroadcastFailure(id);
 
                 // Let us rest.
                 state = States.Resting;

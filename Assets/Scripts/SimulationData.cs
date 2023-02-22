@@ -92,24 +92,6 @@ public class SimulationData : MonoBehaviour
             Application.Quit();
             Debug.Log("SIMULATION COMPLETE!");
         }
-
-
-        // Social cue pheromone like gradual decay 
-        foreach (Robot robot in robots)
-        {
-            robot.successSocialCue -= successAttenuation * Time.deltaTime;
-            if (robot.successSocialCue < 0)
-            {
-                robot.successSocialCue = 0;
-            }
-
-            robot.failureSocialCue -= failureAttenuation * Time.deltaTime;
-            if (robot.failureSocialCue < 0)
-            {
-                robot.failureSocialCue = 0;
-            }
-        }
-
     }
 
     IEnumerator CollectDataAndSpawn()
@@ -125,15 +107,28 @@ public class SimulationData : MonoBehaviour
                 spawnPos *= Random.Range(spawnFoodMinDistance, spawnFoodMaxDistance);
                 spawnPos.y = 1f;
 
-                Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
+                //Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
                 foodItemsProduced += 1;
             }
 
-            // Collecting Robot energy data
+            // Collecting Robot energy data and decreasing social cues !
             float energyUsed = 0;
             var robotsSearching = 0;
             foreach (Robot robot in robots)
             {
+
+                robot.successSocialCue -= successAttenuation;
+                if (robot.successSocialCue < 0)
+                {
+                    robot.successSocialCue = 0;
+                }
+
+                robot.failureSocialCue -= failureAttenuation;
+                if (robot.failureSocialCue < 0)
+                {
+                    robot.failureSocialCue = 0;
+                }
+                
                 var state = robot.GetState();
                 int energyConsumption = stateEnergyConsumption[(int)state];
 
@@ -148,9 +143,7 @@ public class SimulationData : MonoBehaviour
                     energyUsed += energyConsumption * robot.Effort;
                 }
 
-                if (state == Robot.States.RandomWalk |
-                    state == Robot.States.MoveToFood |
-                    state == Robot.States.ScanArea)
+                if (state != Robot.States.Resting)
                 {
                     robotsSearching += 1;
                 }
