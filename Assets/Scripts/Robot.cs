@@ -19,8 +19,8 @@ public class Robot : MonoBehaviour
     // Scanner
     float foodScanRadius = 40;
     float foodScanFOV = 30;
-    float proximityScanRadius = 4f;
-    float grabDistance = 1.5f;
+    float proximityScanRadius = 9.2f;
+    float grabDistance = 6.7f;
 
     // Target food item
     Collider targetFoodItem;
@@ -56,16 +56,18 @@ public class Robot : MonoBehaviour
 
     // Social Cues
     // Teamate Success Rest Decrease
-    float tsrd = 20;
+    float tsrd = 10;
     // Teammate Failure Rest Increase
     float tfri = 40;
     // Teammate Success Search Increase
     float tssi = 10;
     // Teammate Failure Search Decrease
-    float tfsd = 10;
+    float tfsd = 20;
 
     public float successSocialCue;
     public float failureSocialCue;
+    private float successAttenuation = 0.1f;
+    private float failureAttenuation = 0.1f;
 
     // Robot Effort
     float effort;
@@ -151,6 +153,19 @@ public class Robot : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        successSocialCue -= successAttenuation * Time.deltaTime;
+        if (successSocialCue < 0)
+        {
+            successSocialCue = 0;
+        }
+
+        failureSocialCue -= failureAttenuation * Time.deltaTime;
+        if (failureSocialCue < 0)
+        {
+            failureSocialCue = 0;
+        }
+
         switch (state)
         {
 
@@ -160,8 +175,15 @@ public class Robot : MonoBehaviour
                 // If we have recived any social cues, make relevant updates ! 
                 if (successSocialCue > 0 || failureSocialCue > 0)
                 {
+                    //Debug.Log("FSC " + failureSocialCue);
+                    //Debug.Log("SSC " + successSocialCue);
+                    //Debug.Log("TR " + thresholdResting);
                     thresholdResting = thresholdResting - (tsrd * successSocialCue) + (tfri * failureSocialCue);
+                    //Debug.Log("TRA " + thresholdResting);
+
+                    //Debug.Log("TS " + thresholdSearching);
                     thresholdSearching = thresholdSearching + (tssi * successSocialCue) - (tfsd * failureSocialCue);
+                    //Debug.Log("TSA " + thresholdSearching);
 
                     if (thresholdResting < 0) thresholdResting = 0;
                     if (thresholdResting > thresholdRestingMax) thresholdResting = thresholdRestingMax;
@@ -326,7 +348,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.MoveToHome:
-                if (Vector3.Distance(nestPosition, transform.position) > 20)
+                if (Vector3.Distance(nestPosition, transform.position) > 24)
                 {
                     // Do colision avoidance if we are on our way back to the nest.
                     if (CheckAvoidance()) break;
@@ -334,7 +356,7 @@ public class Robot : MonoBehaviour
                     MoveRobot((nestPosition - transform.position).normalized);
                     break;
                 }
-                else if (Vector3.Distance(nestPosition, transform.position) > 3)
+                else if (Vector3.Distance(nestPosition, transform.position) > 10)
                 {
                     // Turn off colision avoidance when we are entering the nest
                     MoveRobot((nestPosition - transform.position).normalized);
@@ -363,7 +385,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case States.Homing:
-                if (Vector3.Distance(nestPosition, transform.position) > 20)
+                if (Vector3.Distance(nestPosition, transform.position) > 24)
                 {
                     // Do colision avoidance if we are on our way back to the nest.
                     if (CheckAvoidance()) break;
@@ -371,7 +393,7 @@ public class Robot : MonoBehaviour
                     MoveRobot((nestPosition - transform.position).normalized);
                     break;
                 }
-                else if (Vector3.Distance(nestPosition, transform.position) > 3)
+                else if (Vector3.Distance(nestPosition, transform.position) > 10)
                 {
                     // Turn off colision avoidance when we are entering the nest
                     MoveRobot((nestPosition - transform.position).normalized);
@@ -606,7 +628,7 @@ public class Robot : MonoBehaviour
 
         //Gizmos.DrawWireSphere(transform.position, foodScanRadius);
         Gizmos.color = Color.black;
-        //Gizmos.DrawWireSphere(transform.position, proximityScanRadius);
+        Gizmos.DrawWireSphere(transform.position, proximityScanRadius);
         //Gizmos.DrawWireSphere(transform.position, grabDistance);
     }
 }

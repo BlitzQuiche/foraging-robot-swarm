@@ -31,13 +31,7 @@ public class GrabSystem : MonoBehaviour
         // Remove parent
         item.transform.SetParent(null);
 
-        // Enable rigidbody
-        item.Rb.isKinematic = false;
-
-        // Enable colldier
-        item.GetComponent<CapsuleCollider>().enabled = true;
-
-        // Destroy the food item after 2 seconds
+        // Destroy the food item
         item.RemoveFoodItem();
     }
 }

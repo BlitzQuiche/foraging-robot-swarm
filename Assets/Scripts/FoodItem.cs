@@ -14,6 +14,9 @@ public class FoodItem : MonoBehaviour
 
         // Set RigidBody
         rb = GetComponent<Rigidbody>();
+
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
     }
 
     public void RemoveFoodItem()

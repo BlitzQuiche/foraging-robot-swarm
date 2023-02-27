@@ -47,6 +47,7 @@ public class SimulationData : MonoBehaviour
     float probabilityNew;
     private float spawnFoodMinDistance = 12;
     private float spawnFoodMaxDistance = 150;
+    private float spawnFoodTime;
 
     // Robot Spawnign
     private float spawnRobotMinDistance = 1;
@@ -62,6 +63,8 @@ public class SimulationData : MonoBehaviour
         robotNumberInput = MenuInput.NumRobotsInput;
         pNewInput = MenuInput.ProbabilityNew;
         speedUpConstant = MenuInput.SpeedUpInput;
+
+        spawnFoodTime = 0;
 
         SpawnRobots(robotNumberInput);
 
@@ -92,14 +95,11 @@ public class SimulationData : MonoBehaviour
             Application.Quit();
             Debug.Log("SIMULATION COMPLETE!");
         }
-    }
 
-    IEnumerator CollectDataAndSpawn()
-    {
-        while (true)
+        // Calculate whether we should place a food item or not
+        spawnFoodTime += Time.deltaTime;
+        if (spawnFoodTime > 1f)
         {
-            yield return new WaitForSeconds(1f);
-            // Calculate whether we should place a food item or not
             if (Random.value >= probabilityNew)
             {
                 Vector3 spawnPos = Random.insideUnitCircle.normalized;
@@ -107,58 +107,69 @@ public class SimulationData : MonoBehaviour
                 spawnPos *= Random.Range(spawnFoodMinDistance, spawnFoodMaxDistance);
                 spawnPos.y = 1f;
 
-                //Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
+                Instantiate(foodItemPrefab, spawnPos, Quaternion.identity);
                 foodItemsProduced += 1;
             }
+            spawnFoodTime = 0;
+        }
 
-            // Collecting Robot energy data and decreasing social cues !
-            float energyUsed = 0;
-            var robotsSearching = 0;
-            foreach (Robot robot in robots)
+        // Collecting Robot energy data and decreasing social cues !
+        float energyUsed = 0;
+        var robotsSearching = 0;
+        foreach (Robot robot in robots)
+        {
+
+            robot.successSocialCue -= successAttenuation;
+            if (robot.successSocialCue < 0)
             {
-
-                robot.successSocialCue -= successAttenuation;
-                if (robot.successSocialCue < 0)
-                {
-                    robot.successSocialCue = 0;
-                }
-
-                robot.failureSocialCue -= failureAttenuation;
-                if (robot.failureSocialCue < 0)
-                {
-                    robot.failureSocialCue = 0;
-                }
-                
-                var state = robot.GetState();
-                int energyConsumption = stateEnergyConsumption[(int)state];
-
-                // Multiply state consumption by effort to account for increased energy costs for
-                // higher effort. Robot isn't moving when resting or scanarea, so no cost increase.
-                if (state == Robot.States.Resting |
-                    state == Robot.States.ScanArea)
-                {
-                    energyUsed += energyConsumption;
-                } else
-                {
-                    energyUsed += energyConsumption * robot.Effort;
-                }
-
-                if (state != Robot.States.Resting)
-                {
-                    robotsSearching += 1;
-                }
-
+                robot.successSocialCue = 0;
             }
 
-            // Swarm energy and searching robots analytics.
-            currentSwarmEnergy -= energyUsed;
-            currentSearching = robotsSearching;
+            robot.failureSocialCue -= failureAttenuation;
+            if (robot.failureSocialCue < 0)
+            {
+                robot.failureSocialCue = 0;
+            }
+
+            var state = robot.GetState();
+            int energyConsumption = stateEnergyConsumption[(int)state];
+
+            // Multiply state consumption by effort to account for increased energy costs for
+            // higher effort. Robot isn't moving when resting or scanarea, so no cost increase.
+            if (state == Robot.States.Resting |
+                state == Robot.States.ScanArea)
+            {
+                energyUsed += energyConsumption * Time.deltaTime;
+            }
+            else
+            {
+                energyUsed += energyConsumption * Time.deltaTime * robot.Effort;
+            }
+
+            if (state != Robot.States.Resting)
+            {
+                robotsSearching += 1;
+            }
+
+        }
+
+        // Swarm energy and searching robots analytics.
+        currentSwarmEnergy -= energyUsed;
+        currentSearching = robotsSearching;
+    }
+
+    IEnumerator CollectDataAndSpawn()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(1f);
             swarmEnergy.Add(currentSwarmEnergy);
             searchingRecordings.Add(currentSearching);
 
             // 1 Second has passed in simulation time
             simulationTime += 1;
             timeRecordings.Add(simulationTime);
+
         }
     }
 
