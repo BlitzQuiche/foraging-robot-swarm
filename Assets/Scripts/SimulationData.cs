@@ -30,11 +30,11 @@ public class SimulationData : MonoBehaviour
     List<int> searchingRecordings = new();
     List<int> timeRecordings = new();
 
-    // Variable used to mimic time in the simulation world in case of speedup
-    int simulationTime;
-
     // Constant used to speedup the simulation
-    float speedUpConstant; // Run the sim x faster
+    float speedUpConstant; 
+    
+    // Time since the begining of the simulation
+    float simulationTime;
 
     // Main Menu Inputs
     int robotNumberInput;
@@ -42,6 +42,7 @@ public class SimulationData : MonoBehaviour
     float simulationRuntimeThreshold;
 
     string outputFilename = "";
+    string outputFoodFilename = "";
 
     // Food Spawning
     float probabilityNew;
@@ -49,13 +50,9 @@ public class SimulationData : MonoBehaviour
     private float spawnFoodMaxDistance = 150;
     private float spawnFoodTime;
 
-    // Robot Spawnign
+    // Robot Spawning
     private float spawnRobotMinDistance = 1;
     private float spawnRobotMaxDistance = 8;
-
-    // Social cue attenuation factor 
-    private float successAttenuation = 0.1f;
-    private float failureAttenuation = 0.1f;
 
     void Start()
     {
@@ -76,19 +73,21 @@ public class SimulationData : MonoBehaviour
         Time.fixedDeltaTime *= Time.timeScale; 
 
         outputFilename = Application.dataPath + "/simulationData.csv";
+        outputFoodFilename = Application.dataPath + "/simulationFoodData.txt";
 
-        dataCollectionCoroutine = CollectDataAndSpawn();
+        dataCollectionCoroutine = CollectData();
         StartCoroutine(dataCollectionCoroutine);
     }
 
 
     void Update()
     {
-        if (simulationTime >= simulationRuntimeThreshold)
+        if (simulationTime > simulationRuntimeThreshold)
         {
             // Switch to end of simulation menu / scene
             // Pause the simulation 
             StopCoroutine(dataCollectionCoroutine);
+            Time.timeScale = 0;
             // Export data as a csv
             WriteCSV();
             // Exit the sim
@@ -119,18 +118,6 @@ public class SimulationData : MonoBehaviour
         foreach (Robot robot in robots)
         {
 
-            robot.successSocialCue -= successAttenuation;
-            if (robot.successSocialCue < 0)
-            {
-                robot.successSocialCue = 0;
-            }
-
-            robot.failureSocialCue -= failureAttenuation;
-            if (robot.failureSocialCue < 0)
-            {
-                robot.failureSocialCue = 0;
-            }
-
             var state = robot.GetState();
             int energyConsumption = stateEnergyConsumption[(int)state];
 
@@ -150,26 +137,26 @@ public class SimulationData : MonoBehaviour
             {
                 robotsSearching += 1;
             }
-
         }
-
         // Swarm energy and searching robots analytics.
         currentSwarmEnergy -= energyUsed;
         currentSearching = robotsSearching;
     }
 
-    IEnumerator CollectDataAndSpawn()
+    IEnumerator CollectData()
     {
         while (true)
         {
+            // Execute this coroutine once every (scaled) second
             yield return new WaitForSeconds(1f);
+
+            // Log current statistics 
             swarmEnergy.Add(currentSwarmEnergy);
             searchingRecordings.Add(currentSearching);
-
-            // 1 Second has passed in simulation time
-            simulationTime += 1;
-            timeRecordings.Add(simulationTime);
-
+            
+            // Increment simulation time by 1 second 
+            simulationTime += 1f;
+            timeRecordings.Add((int)simulationTime);
         }
     }
 
@@ -238,8 +225,11 @@ public class SimulationData : MonoBehaviour
         }
         tw.Close();
 
-        Debug.Log(foodItemsProduced);
-        Debug.Log(foodItemsCollected);
+        TextWriter tw2 = new StreamWriter(outputFoodFilename, false);
+        tw2.WriteLine("Produced,Collected");
+        tw2.WriteLine(foodItemsProduced + "," + foodItemsCollected);
+        tw2.Close();
+
     }
 
     private void OnGUI()
@@ -247,7 +237,7 @@ public class SimulationData : MonoBehaviour
         // Make a background box
         GUI.Box(new Rect(10, 10, 200, 40), "Current Swarm Energy");
         // Write Current swarm energy to box
-        GUI.Box(new Rect(60, 30, 80, 20), currentSwarmEnergy.ToString());
+        GUI.Box(new Rect(60, 30, 80, 20), ((int)currentSwarmEnergy).ToString());
 
         GUI.Box(new Rect(10, 60, 200, 40), "Simulation Time");
 
