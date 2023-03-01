@@ -39,11 +39,11 @@ public class RobotController : MonoBehaviour
             var outsideDistance = Abs_X_Z - CageDiagonal;
             
             // Set new positions to that robot remains just inside the cage
-            if (newPosition.x > 0) newPosition.x -= outsideDistance / 2 - 2;
-            else                   newPosition.x += outsideDistance / 2 + 2;
+            if (newPosition.x > 0) newPosition.x -= outsideDistance / 2 - 10;
+            else                   newPosition.x += outsideDistance / 2 + 10;
 
-            if (newPosition.z > 0) newPosition.z -= outsideDistance / 2 - 2;
-            else                   newPosition.z += outsideDistance / 2 + 2;
+            if (newPosition.z > 0) newPosition.z -= outsideDistance / 2 - 10;
+            else                   newPosition.z += outsideDistance / 2 + 10;
 
         }
 
