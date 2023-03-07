@@ -42,6 +42,11 @@ public class Robot : MonoBehaviour
     public float thresholdResting;
     float thresholdRestingMax = 2000;
 
+    // Effort affected by cues 
+    public float effort;
+    float maxEffort = 2;
+    float minEffort = 0.5f;
+
     // Environental Cues
     // Avoidance Rest Increase
     float ari = 5;
@@ -53,6 +58,11 @@ public class Robot : MonoBehaviour
     float fri = 20;
     // Success Rest Decrease
     float srd = 20;
+
+    // Success Effort Increase
+    float sei = 0.01f;
+    // Failure Effort Decrease
+    float fed = 0.01f;
 
     // Social Cues
     // Teamate Success Rest Decrease
@@ -69,8 +79,6 @@ public class Robot : MonoBehaviour
     private float successAttenuation = 0.1f;
     private float failureAttenuation = 0.1f;
 
-    // Robot Effort
-    float effort;
     public float Effort { get => effort; set => effort = value; }
 
     // Current robot state
@@ -122,7 +130,7 @@ public class Robot : MonoBehaviour
         nestPosition = GameObject.Find("Nest").transform.position;
 
         // Effort
-        effort = MenuInput.Effort;
+        effort = 1;
 
         // Initialise Robot layer
         gameObject.layer = (int)Layers.Robots;
@@ -377,6 +385,10 @@ public class Robot : MonoBehaviour
                 thresholdResting -= srd;
                 if (thresholdResting < 0) thresholdResting = 0;
 
+                // We found food, lets try harder next time!
+                effort += sei;
+                if (effort > maxEffort) effort = maxEffort;
+
                 // Let us rest
                 state = States.Resting;
                 ChangeAntenaColor(colours[(int)state]);
@@ -406,6 +418,10 @@ public class Robot : MonoBehaviour
                 {
                     thresholdResting = thresholdRestingMax;
                 }
+
+                // Failed to find food, decrease effort next time we forage again!
+                effort -= fed;
+                if (effort < minEffort) effort = minEffort;
 
                 // Broadcast to everyone that we have failed to find any food. 
                 simulation.BroadcastFailure(id);
