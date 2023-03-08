@@ -44,8 +44,8 @@ public class Robot : MonoBehaviour
 
     // Effort affected by cues 
     public float effort;
-    float maxEffort = 2;
-    float minEffort = 0.5f;
+    float maxEffort = 1.8f;
+    float minEffort = 0.2f;
 
     // Environental Cues
     // Avoidance Rest Increase

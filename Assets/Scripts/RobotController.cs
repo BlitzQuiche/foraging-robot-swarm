@@ -8,10 +8,10 @@ public class RobotController : MonoBehaviour
     Vector3 velocity;
 
     private const int CageDiagonal = 224;
-    float MIN_X = -160;
-    float MAX_X = 160;
-    float MIN_Z = -160;
-    float MAX_Z = 160;
+    float MIN_X = -155;
+    float MAX_X = 155;
+    float MIN_Z = -155;
+    float MAX_Z = 155;
 
     void Start()
     {
@@ -28,9 +28,6 @@ public class RobotController : MonoBehaviour
     {
         Vector3 newPosition = robotRigidBody.position + velocity * Time.deltaTime;
 
-        newPosition.x = Mathf.Clamp(newPosition.x, MIN_X, MAX_X);
-        newPosition.z = Mathf.Clamp(newPosition.z, MIN_Z, MAX_Z);
-
         var Abs_X_Z = Mathf.Abs(newPosition.x) + Mathf.Abs(newPosition.z);
         if (CageDiagonal < Abs_X_Z)
         {
@@ -39,13 +36,16 @@ public class RobotController : MonoBehaviour
             var outsideDistance = Abs_X_Z - CageDiagonal;
             
             // Set new positions to that robot remains just inside the cage
-            if (newPosition.x > 0) newPosition.x -= outsideDistance / 2 - 10;
-            else                   newPosition.x += outsideDistance / 2 + 10;
+            if (newPosition.x > 0) newPosition.x -= (outsideDistance ) - 10;
+            else                   newPosition.x += (outsideDistance ) + 10;
 
-            if (newPosition.z > 0) newPosition.z -= outsideDistance / 2 - 10;
-            else                   newPosition.z += outsideDistance / 2 + 10;
+            if (newPosition.z > 0) newPosition.z -= (outsideDistance ) - 10;
+            else                   newPosition.z += (outsideDistance ) + 10;
 
         }
+
+        newPosition.x = Mathf.Clamp(newPosition.x, MIN_X, MAX_X);
+        newPosition.z = Mathf.Clamp(newPosition.z, MIN_Z, MAX_Z);
 
         newPosition.y = 1;
 
