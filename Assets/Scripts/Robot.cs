@@ -31,6 +31,24 @@ public class Robot : MonoBehaviour
     float scanAreaTime;
     float scanAreaThreshold;
 
+    // Robot Social Learning
+    // Robot self assesment score
+    // Equal to the number of food items collected in the past selfAssesmentLookbackTime seconds.
+    public float selfAssesmentScore;
+
+    // Robot internal perception of how long it has been alive for.
+    float existanceTime;
+    List<float> foodCollectionTimes = new();
+
+    // How long robots will keep track of food items they have collected for above score.
+    float selfAssesmentLookbackPeriod = 200;
+    // If True, robots will not accept any incoming broadcast requests.
+    bool currentlyMaturing;
+    float maturationPeriod = 400;
+    float maturationTime;
+
+    // Cue paramter mutation
+    float mutationSigma;
 
     // Robot Timings affected by cues
     public float searchingTime;
@@ -42,44 +60,32 @@ public class Robot : MonoBehaviour
     public float thresholdResting;
     float thresholdRestingMax = 2000;
 
-    // Effort affected by cues 
-    public float effort;
-    float maxEffort = 1.8f;
-    float minEffort = 0.2f;
-
     // Environental Cues
     // Avoidance Rest Increase
-    float ari = 5;
+    public float ari = 5;
     // Avoidance Search Decrease
-    float asd = 5;
+    public float asd = 5;
 
     // Internal Cues
     // Failure Rest Increase
-    float fri = 20;
+    public float fri = 20;
     // Success Rest Decrease
-    float srd = 20;
-
-    // Success Effort Increase
-    float sei = 0.01f;
-    // Failure Effort Decrease
-    float fed = 0.01f;
+    public float srd = 20;
 
     // Social Cues
     // Teamate Success Rest Decrease
-    float tsrd = 10;
+    public float tsrd = 10;
     // Teammate Failure Rest Increase
-    float tfri = 40;
+    public float tfri = 40;
     // Teammate Success Search Increase
-    float tssi = 10;
+    public float tssi = 10;
     // Teammate Failure Search Decrease
-    float tfsd = 20;
+    public float tfsd = 20;
 
     public float successSocialCue;
     public float failureSocialCue;
     private float successAttenuation = 0.1f;
     private float failureAttenuation = 0.1f;
-
-    public float Effort { get => effort; set => effort = value; }
 
     // Current robot state
     public enum States
@@ -129,8 +135,11 @@ public class Robot : MonoBehaviour
         grabber = GetComponent<GrabSystem>();
         nestPosition = GameObject.Find("Nest").transform.position;
 
-        // Effort
-        effort = 1;
+        // Social learning
+        selfAssesmentScore = 0;
+        existanceTime = 0;
+        currentlyMaturing = true;
+        maturationTime = maturationPeriod;
 
         // Initialise Robot layer
         gameObject.layer = (int)Layers.Robots;
@@ -161,6 +170,19 @@ public class Robot : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Increment how long we have existed for
+        existanceTime += Time.deltaTime;
+
+        // If we are currently maturing, check if we have matured for long enough
+        if (currentlyMaturing)
+        {
+            if (maturationTime < existanceTime)
+            {
+                // We have been maturing for long enough, stop maturing and allow social learning broadcasts
+                currentlyMaturing = false;
+                Debug.Log($"Stop maturing");
+            }
+        }
 
         successSocialCue -= successAttenuation * Time.deltaTime;
         if (successSocialCue < 0)
@@ -174,12 +196,19 @@ public class Robot : MonoBehaviour
             failureSocialCue = 0;
         }
 
+        // Check whether we need to forget about any food items in our self assesment score.
+        var foodForgetTime = foodCollectionTimes.FirstOrDefault();
+        if (foodForgetTime != 0 & foodForgetTime < existanceTime)
+        {
+            foodCollectionTimes.RemoveAt(0);
+            selfAssesmentScore -= 1;
+        }
+
         switch (state)
         {
 
             case States.Resting:
                 // Check for any new social cues!
-
                 // If we have recived any social cues, make relevant updates ! 
                 if (successSocialCue > 0 || failureSocialCue > 0)
                 {
@@ -305,6 +334,11 @@ public class Robot : MonoBehaviour
                     // Grab the food !
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
 
+                    // Increase our current self assesement score and remember the time we need to
+                    // forget about this food item in our self assement score
+                    selfAssesmentScore += 1;
+                    foodCollectionTimes.Add(Time.time + selfAssesmentLookbackPeriod);
+
                     // Update our state and start moving home.
                     state = States.MoveToHome;
                     ChangeAntenaColor(colours[(int)state]);
@@ -378,16 +412,15 @@ public class Robot : MonoBehaviour
                 // Tell the simulation that we have deposited some food
                 simulation.DepositFood();
 
+                // Broadcast our current self assesment score and paramters for social learning
+                if (!currentlyMaturing) broadcastSocialTransfer();
+
                 // Broadcast social cue to tell everyone we have found some food! Hurray!
                 simulation.BroadcastSuccess(id);
 
                 // Update resting threshold with interal cues
                 thresholdResting -= srd;
                 if (thresholdResting < 0) thresholdResting = 0;
-
-                // We found food, lets try harder next time!
-                effort += sei;
-                if (effort > maxEffort) effort = maxEffort;
 
                 // Let us rest
                 state = States.Resting;
@@ -419,9 +452,8 @@ public class Robot : MonoBehaviour
                     thresholdResting = thresholdRestingMax;
                 }
 
-                // Failed to find food, decrease effort next time we forage again!
-                effort -= fed;
-                if (effort < minEffort) effort = minEffort;
+                // Broadcast our current self assesment score and paramters for social learning
+                if (!currentlyMaturing) broadcastSocialTransfer();
 
                 // Broadcast to everyone that we have failed to find any food. 
                 simulation.BroadcastFailure(id);
@@ -460,6 +492,7 @@ public class Robot : MonoBehaviour
         }
     }
 
+    
     private bool CheckAvoidance()
     {
         var collisions = ScanForCollisions();
@@ -506,6 +539,46 @@ public class Robot : MonoBehaviour
     public void IncrementFailureSocialCue()
     {
         failureSocialCue += 1;
+    }
+
+    // Social learning diffusion function. If a robot has recieved a message from a greater recievedAssesment
+    // than its own selfAsssesment, it will copy the recievedParamters into its own !
+    // Robot will only accept the message if it is not currently in maturation period and recieved assesment 
+    // is greater than its own selfAssesmentScore.
+    public void RecieveSocialTransfer(float recievedAssesment, float[] recievedParameters)
+    {
+        if (!currentlyMaturing & recievedAssesment > selfAssesmentScore)
+        {
+            // We start maturing as we have recived new paramters!
+            currentlyMaturing = true;
+            // Set the alarm to stop maturing for maturationPeriod seconds in the future.
+            maturationTime = existanceTime + maturationPeriod;
+
+            Debug.Log($"Robot {id} accepting social transfer");
+            Debug.Log($"SelfAssesment: {selfAssesmentScore}, recieved {recievedAssesment}");
+            Debug.Log($"Will stop maturing at {maturationTime}, current exist time: {existanceTime}");
+
+            // Overwrite our current parameters with new ones !
+            // TODO: Implement gaussian mutation here? 
+            var mutationVal = Random.Range(-5, 5);
+            ari = recievedParameters[0] + mutationVal;
+            asd = recievedParameters[1] + mutationVal;
+            fri = recievedParameters[2] + mutationVal;
+            srd = recievedParameters[3] + mutationVal;
+            tsrd = recievedParameters[4] + mutationVal;
+            tfri = recievedParameters[5] + mutationVal;
+            tssi = recievedParameters[6] + mutationVal;
+            tfsd = recievedParameters[7] + mutationVal;
+        }
+    }
+
+    // Broadcast to other robots in the nest our score and paramters to diffuse via social learning.
+    public void broadcastSocialTransfer()
+    {
+        float[] parameters = 
+        { ari, asd, fri, srd, tsrd, tfri, tssi, tfsd };
+
+        simulation.Transfer(id, selfAssesmentScore, parameters);
     }
 
     public States GetState()
@@ -617,7 +690,7 @@ public class Robot : MonoBehaviour
         transform.LookAt(looking);
 
         // Calcultate and update robots velocity. 
-        velocity = direction.normalized * maxSpeed * effort;
+        velocity = direction.normalized * maxSpeed;
 
         // Pass new velocity to robot controller.
         controller.Move(velocity);

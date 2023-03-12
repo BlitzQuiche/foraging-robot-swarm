@@ -22,7 +22,6 @@ public class SimulationData : MonoBehaviour
     int foodEnergyValue = 2000;
     float currentSwarmEnergy;
     int currentSearching;
-    float currentAverageEffort;
 
     // Dependent Variables
     int foodItemsProduced;
@@ -30,7 +29,6 @@ public class SimulationData : MonoBehaviour
     List<float> swarmEnergy = new();
     List<int> searchingRecordings = new();
     List<int> timeRecordings = new();
-    List<float> averageEffortRecordings = new();
 
     // Constant used to speedup the simulation
     float speedUpConstant; 
@@ -117,37 +115,22 @@ public class SimulationData : MonoBehaviour
         // Collecting Robot energy data and decreasing social cues !
         float energyUsed = 0;
         var robotsSearching = 0;
-        float averageEffort = 0;
         foreach (Robot robot in robots)
         {
 
             var state = robot.GetState();
             int energyConsumption = stateEnergyConsumption[(int)state];
 
-            // Multiply state consumption by effort to account for increased energy costs for
-            // higher effort. Robot isn't moving when resting or scanarea, so no cost increase.
-            if (state == Robot.States.Resting |
-                state == Robot.States.ScanArea)
-            {
-                energyUsed += energyConsumption * Time.deltaTime;
-            }
-            else
-            {
-                energyUsed += energyConsumption * Time.deltaTime * robot.Effort;
-            }
-
+            energyUsed += energyConsumption * Time.deltaTime;
+ 
             if (state != Robot.States.Resting)
             {
                 robotsSearching += 1;
             }
-
-            averageEffort += robot.effort;
         }
         // Swarm energy and searching robots analytics.
         currentSwarmEnergy -= energyUsed;
         currentSearching = robotsSearching;
-        currentAverageEffort = averageEffort / robotNumberInput;
-
     }
 
     IEnumerator CollectData()
@@ -160,7 +143,6 @@ public class SimulationData : MonoBehaviour
             // Log current statistics 
             swarmEnergy.Add(currentSwarmEnergy);
             searchingRecordings.Add(currentSearching);
-            averageEffortRecordings.Add(currentAverageEffort);
 
             // Increment simulation time by 1 second 
             simulationTime += 1f;
@@ -181,6 +163,17 @@ public class SimulationData : MonoBehaviour
 
             // Insantiate a robot and add to list of robots.
             Robot r = Instantiate(robotPrefab, spawnPos, Quaternion.identity).GetComponent<Robot>();
+
+            // Set robot cue parameters to random values !
+            r.ari = Random.Range(1, 15);
+            r.asd = Random.Range(1, 15);
+            r.fri = Random.Range(5, 35);
+            r.srd = Random.Range(5, 35);
+            r.tsrd = Random.Range(5, 20);
+            r.tfri = Random.Range(10, 50);
+            r.tssi = Random.Range(5, 20);
+            r.tfsd = Random.Range(10, 50);
+
             robots.Add(r);
         }
         OrbitRobots.AddRobots(robots);
@@ -220,16 +213,28 @@ public class SimulationData : MonoBehaviour
         }
     }
 
+    public void Transfer(int informingRobotId, float recievedAssesment, float[] recievedParameters)
+    {
+        foreach (var robot in robots)
+        {
+            // Broadcast to to other resting robots our current self assesment score and parameters
+            if (robot.GetInstanceID() != informingRobotId & robot.GetState() == Robot.States.Resting)
+            {
+                robot.RecieveSocialTransfer(recievedAssesment, recievedParameters);
+            }
+        }
+    }
+
     private void WriteCSV()
     {
         TextWriter tw = new StreamWriter(outputFilename, false);
-        tw.WriteLine("Time,Energy,Searching,AverageEffort");
+        tw.WriteLine("Time,Energy,Searching");
         tw.Close();
 
         tw = new StreamWriter(outputFilename, true);
         for (int i = 0; i < timeRecordings.Count; i++)
         {
-            tw.WriteLine(timeRecordings[i] + "," + swarmEnergy[i] + "," + searchingRecordings[i] + "," + averageEffortRecordings[i]);
+            tw.WriteLine(timeRecordings[i] + "," + swarmEnergy[i] + "," + searchingRecordings[i]);
         }
         tw.Close();
 
