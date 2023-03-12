@@ -23,12 +23,23 @@ public class SimulationData : MonoBehaviour
     float currentSwarmEnergy;
     int currentSearching;
 
+    // Current mean cue paramter values for the simulation
+    float ari;
+    float asd;
+    float fri;
+    float srd;
+    float tsrd;
+    float tfri;
+    float tssi;
+    float tfsd;
+
     // Dependent Variables
     int foodItemsProduced;
     int foodItemsCollected;
     List<float> swarmEnergy = new();
     List<int> searchingRecordings = new();
     List<int> timeRecordings = new();
+    List<(float, float, float, float, float, float, float, float)> cueRecordings = new();
 
     // Constant used to speedup the simulation
     float speedUpConstant; 
@@ -42,12 +53,13 @@ public class SimulationData : MonoBehaviour
     float simulationRuntimeThreshold;
 
     string outputFilename = "";
+    string outputCueFilename = "";
     string outputFoodFilename = "";
 
     // Food Spawning
     float probabilityNew;
-    private float spawnFoodMinDistance = 12;
-    private float spawnFoodMaxDistance = 150;
+    private float spawnFoodMinDistance = 20;
+    private float spawnFoodMaxDistance = 155;
     private float spawnFoodTime;
 
     // Robot Spawning
@@ -73,6 +85,7 @@ public class SimulationData : MonoBehaviour
         Time.fixedDeltaTime *= Time.timeScale; 
 
         outputFilename = Application.dataPath + "/simulationData.csv";
+        outputCueFilename = Application.dataPath + "/simulationCueData.csv";
         outputFoodFilename = Application.dataPath + "/simulationFoodData.txt";
 
         dataCollectionCoroutine = CollectData();
@@ -115,6 +128,15 @@ public class SimulationData : MonoBehaviour
         // Collecting Robot energy data and decreasing social cues !
         float energyUsed = 0;
         var robotsSearching = 0;
+        
+        float ari_c = 0;
+        float asd_c = 0;
+        float fri_c = 0;
+        float srd_c = 0;
+        float tsrd_c = 0;
+        float tfri_c = 0;
+        float tssi_c = 0;
+        float tfsd_c = 0;
         foreach (Robot robot in robots)
         {
 
@@ -127,10 +149,29 @@ public class SimulationData : MonoBehaviour
             {
                 robotsSearching += 1;
             }
+
+            ari_c += robot.ari;
+            asd_c += robot.asd;
+            fri_c += robot.fri;
+            srd_c += robot.srd;
+            tsrd_c += robot.tsrd;
+            tfri_c += robot.tfri;
+            tssi_c += robot.tssi;
+            tfsd_c += robot.tfsd;
+
         }
         // Swarm energy and searching robots analytics.
         currentSwarmEnergy -= energyUsed;
         currentSearching = robotsSearching;
+
+        ari = ari_c / robotNumberInput;
+        asd = asd_c / robotNumberInput;
+        fri = fri_c / robotNumberInput;
+        srd = srd_c / robotNumberInput;
+        tsrd = tsrd_c / robotNumberInput;
+        tfri = tfri_c / robotNumberInput;
+        tssi = tssi_c / robotNumberInput;
+        tfsd = tfsd_c / robotNumberInput;
     }
 
     IEnumerator CollectData()
@@ -143,6 +184,7 @@ public class SimulationData : MonoBehaviour
             // Log current statistics 
             swarmEnergy.Add(currentSwarmEnergy);
             searchingRecordings.Add(currentSearching);
+            cueRecordings.Add((ari, asd, fri, srd, tsrd, tfri, tssi, tfsd));
 
             // Increment simulation time by 1 second 
             simulationTime += 1f;
@@ -170,7 +212,7 @@ public class SimulationData : MonoBehaviour
             r.fri = Random.Range(5, 35);
             r.srd = Random.Range(5, 35);
             r.tsrd = Random.Range(5, 20);
-            r.tfri = Random.Range(10, 50);
+            r.tfri = Random.Range(20, 50);
             r.tssi = Random.Range(5, 20);
             r.tfsd = Random.Range(10, 50);
 
@@ -242,6 +284,14 @@ public class SimulationData : MonoBehaviour
         tw2.WriteLine("Produced,Collected");
         tw2.WriteLine(foodItemsProduced + "," + foodItemsCollected);
         tw2.Close();
+
+        TextWriter tw3 = new StreamWriter(outputCueFilename, false);
+        tw3.WriteLine("Time, ari, asd, fri, srd, tsrd, tfri, tssi, tfsd");
+        for (int i = 0; i < timeRecordings.Count; i++)
+        {
+            tw3.WriteLine(timeRecordings[i] + "," + cueRecordings[i].Item1 + "," + cueRecordings[i].Item2 + "," + cueRecordings[i].Item3 + "," + cueRecordings[i].Item4 + "," + cueRecordings[i].Item5 + "," + cueRecordings[i].Item6 + "," + cueRecordings[i].Item7 + "," + cueRecordings[i].Item8 + ",");
+        }
+        tw3.Close();
 
     }
 

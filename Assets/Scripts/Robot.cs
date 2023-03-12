@@ -473,7 +473,7 @@ public class Robot : MonoBehaviour
                 // We decide not to do any colision avoidance when leaving the nest. 
                 // Assumption that robots can find their own way to the edge of nest 
                 // without bumping into other robots. 
-
+                
                 if (Vector3.Distance(nestPosition, transform.position) < 20)
                 {
                     // Move robot in whichever direction we were previously going to leave the nest.
@@ -560,6 +560,7 @@ public class Robot : MonoBehaviour
 
             // Overwrite our current parameters with new ones !
             // TODO: Implement gaussian mutation here? 
+            // TODO: Fix paramters going negative, min values for paramters etc
             var mutationVal = Random.Range(-5, 5);
             ari = recievedParameters[0] + mutationVal;
             asd = recievedParameters[1] + mutationVal;
