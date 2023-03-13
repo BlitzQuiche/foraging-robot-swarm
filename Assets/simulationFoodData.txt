@@ -1,2 +1,2 @@
 Produced,Collected
-312,304
+610,598

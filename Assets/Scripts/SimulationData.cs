@@ -22,6 +22,7 @@ public class SimulationData : MonoBehaviour
     int foodEnergyValue = 2000;
     float currentSwarmEnergy;
     int currentSearching;
+    float currentRobotScore;
 
     // Current mean cue paramter values for the simulation
     float ari;
@@ -40,6 +41,7 @@ public class SimulationData : MonoBehaviour
     List<int> searchingRecordings = new();
     List<int> timeRecordings = new();
     List<(float, float, float, float, float, float, float, float)> cueRecordings = new();
+    List<float> robotScores = new();
 
     // Constant used to speedup the simulation
     float speedUpConstant; 
@@ -58,7 +60,7 @@ public class SimulationData : MonoBehaviour
 
     // Food Spawning
     float probabilityNew;
-    private float spawnFoodMinDistance = 20;
+    private float spawnFoodMinDistance = 25;
     private float spawnFoodMaxDistance = 155;
     private float spawnFoodTime;
 
@@ -128,6 +130,7 @@ public class SimulationData : MonoBehaviour
         // Collecting Robot energy data and decreasing social cues !
         float energyUsed = 0;
         var robotsSearching = 0;
+        float robotScore = 0;
         
         float ari_c = 0;
         float asd_c = 0;
@@ -150,6 +153,8 @@ public class SimulationData : MonoBehaviour
                 robotsSearching += 1;
             }
 
+            robotScore = robot.selfAssesmentScore;
+
             ari_c += robot.cueParameters["ari"];
             asd_c += robot.cueParameters["asd"];
             fri_c += robot.cueParameters["fri"];
@@ -163,6 +168,8 @@ public class SimulationData : MonoBehaviour
         // Swarm energy and searching robots analytics.
         currentSwarmEnergy -= energyUsed;
         currentSearching = robotsSearching;
+
+        currentRobotScore = robotScore / robotNumberInput;
 
         ari = ari_c / robotNumberInput;
         asd = asd_c / robotNumberInput;
@@ -185,6 +192,7 @@ public class SimulationData : MonoBehaviour
             swarmEnergy.Add(currentSwarmEnergy);
             searchingRecordings.Add(currentSearching);
             cueRecordings.Add((ari, asd, fri, srd, tsrd, tfri, tssi, tfsd));
+            robotScores.Add(currentRobotScore);
 
             // Increment simulation time by 1 second 
             simulationTime += 1f;
@@ -214,7 +222,7 @@ public class SimulationData : MonoBehaviour
             r.cueParameters["tsrd"]= Random.Range(10, 30);
             r.cueParameters["tfri"]= Random.Range(30, 50);
             r.cueParameters["tssi"]= Random.Range(5, 30);
-            r.cueParameters["tfsd"]= Random.Range(10, 30 );
+            r.cueParameters["tfsd"]= Random.Range(10, 30);
 
             robots.Add(r);
         }
@@ -286,10 +294,10 @@ public class SimulationData : MonoBehaviour
         tw2.Close();
 
         TextWriter tw3 = new StreamWriter(outputCueFilename, false);
-        tw3.WriteLine("Time, ari, asd, fri, srd, tsrd, tfri, tssi, tfsd");
+        tw3.WriteLine("Time, ari, asd, fri, srd, tsrd, tfri, tssi, tfsd, score");
         for (int i = 0; i < timeRecordings.Count; i++)
         {
-            tw3.WriteLine(timeRecordings[i] + "," + cueRecordings[i].Item1 + "," + cueRecordings[i].Item2 + "," + cueRecordings[i].Item3 + "," + cueRecordings[i].Item4 + "," + cueRecordings[i].Item5 + "," + cueRecordings[i].Item6 + "," + cueRecordings[i].Item7 + "," + cueRecordings[i].Item8 + ",");
+            tw3.WriteLine(timeRecordings[i] + "," + cueRecordings[i].Item1 + "," + cueRecordings[i].Item2 + "," + cueRecordings[i].Item3 + "," + cueRecordings[i].Item4 + "," + cueRecordings[i].Item5 + "," + cueRecordings[i].Item6 + "," + cueRecordings[i].Item7 + "," + cueRecordings[i].Item8 + "," + robotScores[i]);
         }
         tw3.Close();
 

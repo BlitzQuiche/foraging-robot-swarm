@@ -37,18 +37,19 @@ public class Robot : MonoBehaviour
     public float selfAssesmentScore;
 
     // Robot internal perception of how long it has been alive for.
+    bool socialLearning = true;
     float existanceTime;
     List<float> foodCollectionTimes = new();
-
-    // How long robots will keep track of food items they have collected for above score.
-    float selfAssesmentLookbackPeriod = 200;
+   
     // If True, robots will not accept any incoming broadcast requests.
     bool currentlyMaturing;
+    // How long robots will mature for!
+    // ie how long they will keep track of food items they have collected for assesment score.
     float maturationPeriod = 400;
     float maturationTime;
 
     // Cue paramter mutation
-    float mutationSigma;
+    float mutationSigma = 1;
 
     // Robot Timings affected by cues
     public float searchingTime;
@@ -218,6 +219,7 @@ public class Robot : MonoBehaviour
             failureSocialCue = 0;
         }
 
+
         // Check whether we need to forget about any food items in our self assesment score.
         var foodForgetTime = foodCollectionTimes.FirstOrDefault();
         if (foodForgetTime != 0 & foodForgetTime < existanceTime)
@@ -260,7 +262,7 @@ public class Robot : MonoBehaviour
                 // If we have rested long enough, leave the home ! 
                 if (restingTime > thresholdResting)
                 {
-                    direction = GetRandomDirection();
+                    direction = transform.position - nestPosition;
                     state = States.LeavingHome;
                     ChangeAntenaColor(colours[(int)state]);
                     restingTime = 0;
@@ -359,7 +361,7 @@ public class Robot : MonoBehaviour
                     // Increase our current self assesement score and remember the time we need to
                     // forget about this food item in our self assement score
                     selfAssesmentScore += 1;
-                    foodCollectionTimes.Add(Time.time + selfAssesmentLookbackPeriod);
+                    foodCollectionTimes.Add(Time.time + maturationPeriod);
 
                     // Update our state and start moving home.
                     state = States.MoveToHome;
@@ -569,7 +571,7 @@ public class Robot : MonoBehaviour
     // is greater than its own selfAssesmentScore.
     public void RecieveSocialTransfer(float recievedAssesment, (string,float)[] recievedParameters)
     {
-        if (!currentlyMaturing & recievedAssesment > selfAssesmentScore)
+        if (socialLearning & !currentlyMaturing & recievedAssesment > selfAssesmentScore)
         {
             // We start maturing as we have recived new paramters!
             currentlyMaturing = true;
@@ -584,7 +586,7 @@ public class Robot : MonoBehaviour
             // Overwrite our current parameters with new ones !
             // TODO: Implement gaussian mutation here? 
             // TODO: Fix paramters going negative, min values for paramters etc
-            var mutationVal = Random.Range(-5, 5);
+            var mutationVal = Random.Range(-mutationSigma, mutationSigma);
             
             foreach(var kvp in recievedParameters)
             {
