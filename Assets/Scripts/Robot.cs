@@ -60,27 +60,49 @@ public class Robot : MonoBehaviour
     public float thresholdResting;
     float thresholdRestingMax = 2000;
 
-    // Environental Cues
-    // Avoidance Rest Increase
-    public float ari = 5;
-    // Avoidance Search Decrease
-    public float asd = 5;
+    /* // Environental Cues
+     // Avoidance Rest Increase
+     public float ari = 5;
+     // Avoidance Search Decrease
+     public float asd = 5;
 
-    // Internal Cues
-    // Failure Rest Increase
-    public float fri = 20;
-    // Success Rest Decrease
-    public float srd = 20;
+     // Internal Cues
+     // Failure Rest Increase
+     public float fri = 20;
+     // Success Rest Decrease
+     public float srd = 20;
 
-    // Social Cues
-    // Teamate Success Rest Decrease
-    public float tsrd = 10;
-    // Teammate Failure Rest Increase
-    public float tfri = 40;
-    // Teammate Success Search Increase
-    public float tssi = 10;
-    // Teammate Failure Search Decrease
-    public float tfsd = 20;
+     // Social Cues
+     // Teamate Success Rest Decrease
+     public float tsrd = 10;
+     // Teammate Failure Rest Increase
+     public float tfri = 40;
+     // Teammate Success Search Increase
+     public float tssi = 10;
+     // Teammate Failure Search Decrease
+     public float tfsd = 20;*/
+
+    const string ARI = "ari";
+    const string ASD = "asd";
+    const string FRI = "fri";
+    const string SRD = "srd";
+    const string TSRD = "tsrd";
+    const string TFRI = "tfri";
+    const string TSSI = "tssi";
+    const string TFSD = "tfsd";
+
+    public Dictionary<string, float> cueParameters = new()
+    {
+        { ARI, 5 },
+        { ASD, 5 },
+        { FRI, 20 },
+        { SRD, 20 },
+        { TSRD, 10 },
+        { TFRI, 40 },
+        { TSSI, 10 },
+        { TFSD, 20 }
+    };
+
 
     public float successSocialCue;
     public float failureSocialCue;
@@ -215,11 +237,11 @@ public class Robot : MonoBehaviour
                     //Debug.Log("FSC " + failureSocialCue);
                     //Debug.Log("SSC " + successSocialCue);
                     //Debug.Log("TR " + thresholdResting);
-                    thresholdResting = thresholdResting - (tsrd * successSocialCue) + (tfri * failureSocialCue);
+                    thresholdResting = thresholdResting - (cueParameters[TSRD] * successSocialCue) + (cueParameters[TFRI] * failureSocialCue);
                     //Debug.Log("TRA " + thresholdResting);
 
                     //Debug.Log("TS " + thresholdSearching);
-                    thresholdSearching = thresholdSearching + (tssi * successSocialCue) - (tfsd * failureSocialCue);
+                    thresholdSearching = thresholdSearching + (cueParameters[TSSI] * successSocialCue) - (cueParameters[TFSD] * failureSocialCue);
                     //Debug.Log("TSA " + thresholdSearching);
 
                     if (thresholdResting < 0) thresholdResting = 0;
@@ -419,7 +441,7 @@ public class Robot : MonoBehaviour
                 simulation.BroadcastSuccess(id);
 
                 // Update resting threshold with interal cues
-                thresholdResting -= srd;
+                thresholdResting -= cueParameters[SRD];
                 if (thresholdResting < 0) thresholdResting = 0;
 
                 // Let us rest
@@ -446,7 +468,7 @@ public class Robot : MonoBehaviour
                 }
 
                 // We have not found food, update resting threshold with internal cue
-                thresholdResting += fri;
+                thresholdResting += cueParameters[FRI];
                 if (thresholdResting > thresholdRestingMax)
                 {
                     thresholdResting = thresholdRestingMax;
@@ -504,13 +526,13 @@ public class Robot : MonoBehaviour
             if (collisions.Any(c => c.GetComponent<Robot>() != null))
             {
                 // Update Thresholds with environmental cues
-                thresholdResting += ari;
+                thresholdResting += cueParameters[ARI];
                 if (thresholdResting > thresholdRestingMax)
                 {
                     thresholdResting = thresholdRestingMax;
                 }
 
-                thresholdSearching -= asd;
+                thresholdSearching -= cueParameters[ASD];
                 if (thresholdSearching < thresholdSearchingMin)
                 {
                     thresholdSearching = thresholdSearchingMin;
@@ -545,7 +567,7 @@ public class Robot : MonoBehaviour
     // than its own selfAsssesment, it will copy the recievedParamters into its own !
     // Robot will only accept the message if it is not currently in maturation period and recieved assesment 
     // is greater than its own selfAssesmentScore.
-    public void RecieveSocialTransfer(float recievedAssesment, float[] recievedParameters)
+    public void RecieveSocialTransfer(float recievedAssesment, (string,float)[] recievedParameters)
     {
         if (!currentlyMaturing & recievedAssesment > selfAssesmentScore)
         {
@@ -555,6 +577,7 @@ public class Robot : MonoBehaviour
             maturationTime = existanceTime + maturationPeriod;
 
             Debug.Log($"Robot {id} accepting social transfer");
+            Debug.Log(string.Join(", ", recievedParameters));
             Debug.Log($"SelfAssesment: {selfAssesmentScore}, recieved {recievedAssesment}");
             Debug.Log($"Will stop maturing at {maturationTime}, current exist time: {existanceTime}");
 
@@ -562,22 +585,38 @@ public class Robot : MonoBehaviour
             // TODO: Implement gaussian mutation here? 
             // TODO: Fix paramters going negative, min values for paramters etc
             var mutationVal = Random.Range(-5, 5);
-            ari = recievedParameters[0] + mutationVal;
-            asd = recievedParameters[1] + mutationVal;
-            fri = recievedParameters[2] + mutationVal;
-            srd = recievedParameters[3] + mutationVal;
-            tsrd = recievedParameters[4] + mutationVal;
-            tfri = recievedParameters[5] + mutationVal;
-            tssi = recievedParameters[6] + mutationVal;
-            tfsd = recievedParameters[7] + mutationVal;
+            
+            foreach(var kvp in recievedParameters)
+            {
+                // Item1 is the name of the cue paramter, item2 is its value from the broadcasting robot!
+                var newValue = kvp.Item2 + mutationVal;
+                if (newValue < 0) cueParameters[kvp.Item1] = 0;
+                else cueParameters[kvp.Item1] = newValue;
+            }
+
+            Debug.Log(string.Join(", ", cueParameters.ToArray()));
         }
     }
 
     // Broadcast to other robots in the nest our score and paramters to diffuse via social learning.
     public void broadcastSocialTransfer()
     {
-        float[] parameters = 
-        { ari, asd, fri, srd, tsrd, tfri, tssi, tfsd };
+        // Get this robots current parameters and prepare them for broadcasting!
+        var parameters = new (string, float)[]
+        { (ARI, cueParameters[ARI]), 
+          (ASD, cueParameters[ASD]), 
+          (FRI, cueParameters[FRI]),
+          (SRD, cueParameters[SRD]),
+          (TSRD, cueParameters[TSRD]), 
+          (TFRI, cueParameters[TFRI]), 
+          (TSSI, cueParameters[TSSI]), 
+          (TFSD, cueParameters[TFSD])
+        };
+
+        // Select 4 random parameters to broadcast to other robots !
+        parameters = parameters.OrderBy(x => Random.Range(0, 7)).Take(4).ToArray();
+
+        Debug.Log(string.Join(", ", parameters));
 
         simulation.Transfer(id, selfAssesmentScore, parameters);
     }
@@ -719,6 +758,7 @@ public class Robot : MonoBehaviour
         //Gizmos.DrawWireSphere(transform.position, foodScanRadius);
         Gizmos.color = Color.black;
         Gizmos.DrawWireSphere(transform.position, proximityScanRadius);
+
         //Gizmos.DrawWireSphere(transform.position, grabDistance);
     }
 }

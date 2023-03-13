@@ -150,14 +150,14 @@ public class SimulationData : MonoBehaviour
                 robotsSearching += 1;
             }
 
-            ari_c += robot.ari;
-            asd_c += robot.asd;
-            fri_c += robot.fri;
-            srd_c += robot.srd;
-            tsrd_c += robot.tsrd;
-            tfri_c += robot.tfri;
-            tssi_c += robot.tssi;
-            tfsd_c += robot.tfsd;
+            ari_c += robot.cueParameters["ari"];
+            asd_c += robot.cueParameters["asd"];
+            fri_c += robot.cueParameters["fri"];
+            srd_c += robot.cueParameters["srd"];
+            tsrd_c += robot.cueParameters["tsrd"];
+            tfri_c += robot.cueParameters["tfri"];
+            tssi_c += robot.cueParameters["tssi"];
+            tfsd_c += robot.cueParameters["tfsd"];
 
         }
         // Swarm energy and searching robots analytics.
@@ -207,14 +207,14 @@ public class SimulationData : MonoBehaviour
             Robot r = Instantiate(robotPrefab, spawnPos, Quaternion.identity).GetComponent<Robot>();
 
             // Set robot cue parameters to random values !
-            r.ari = Random.Range(1, 15);
-            r.asd = Random.Range(1, 15);
-            r.fri = Random.Range(5, 35);
-            r.srd = Random.Range(5, 35);
-            r.tsrd = Random.Range(5, 20);
-            r.tfri = Random.Range(20, 50);
-            r.tssi = Random.Range(5, 20);
-            r.tfsd = Random.Range(10, 50);
+            r.cueParameters["ari"] = Random.Range(1, 15);
+            r.cueParameters["asd"] = Random.Range(1, 15);
+            r.cueParameters["fri"] = Random.Range(10, 30);
+            r.cueParameters["srd"] = Random.Range(10, 30);
+            r.cueParameters["tsrd"]= Random.Range(10, 30);
+            r.cueParameters["tfri"]= Random.Range(30, 50);
+            r.cueParameters["tssi"]= Random.Range(5, 30);
+            r.cueParameters["tfsd"]= Random.Range(10, 30 );
 
             robots.Add(r);
         }
@@ -255,7 +255,7 @@ public class SimulationData : MonoBehaviour
         }
     }
 
-    public void Transfer(int informingRobotId, float recievedAssesment, float[] recievedParameters)
+    public void Transfer(int informingRobotId, float recievedAssesment, (string, float)[] recievedParameters)
     {
         foreach (var robot in robots)
         {
