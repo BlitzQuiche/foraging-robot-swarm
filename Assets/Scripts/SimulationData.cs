@@ -294,7 +294,7 @@ public class SimulationData : MonoBehaviour
         tw2.Close();
 
         TextWriter tw3 = new StreamWriter(outputCueFilename, false);
-        tw3.WriteLine("Time, ari, asd, fri, srd, tsrd, tfri, tssi, tfsd, score");
+        tw3.WriteLine("Time,ari,asd,fri,srd,tsrd,tfri,tssi,tfsd,score");
         for (int i = 0; i < timeRecordings.Count; i++)
         {
             tw3.WriteLine(timeRecordings[i] + "," + cueRecordings[i].Item1 + "," + cueRecordings[i].Item2 + "," + cueRecordings[i].Item3 + "," + cueRecordings[i].Item4 + "," + cueRecordings[i].Item5 + "," + cueRecordings[i].Item6 + "," + cueRecordings[i].Item7 + "," + cueRecordings[i].Item8 + "," + robotScores[i]);

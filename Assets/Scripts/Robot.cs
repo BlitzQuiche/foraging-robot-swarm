@@ -33,7 +33,7 @@ public class Robot : MonoBehaviour
 
     // Robot Social Learning
     // Robot self assesment score
-    // Equal to the number of food items collected in the past selfAssesmentLookbackTime seconds.
+    // Equal to the number of food items collected in the past mutationPeriod seconds.
     public float selfAssesmentScore;
 
     // Robot internal perception of how long it has been alive for.
@@ -224,6 +224,7 @@ public class Robot : MonoBehaviour
         var foodForgetTime = foodCollectionTimes.FirstOrDefault();
         if (foodForgetTime != 0 & foodForgetTime < existanceTime)
         {
+            // TODO: Fix Self assesment score below 0 BUG!
             foodCollectionTimes.RemoveAt(0);
             selfAssesmentScore -= 1;
         }
@@ -358,11 +359,6 @@ public class Robot : MonoBehaviour
                     // Grab the food !
                     grabber.PickItem(targetFoodItem.GetComponent<FoodItem>());
 
-                    // Increase our current self assesement score and remember the time we need to
-                    // forget about this food item in our self assement score
-                    selfAssesmentScore += 1;
-                    foodCollectionTimes.Add(Time.time + maturationPeriod);
-
                     // Update our state and start moving home.
                     state = States.MoveToHome;
                     ChangeAntenaColor(colours[(int)state]);
@@ -435,6 +431,11 @@ public class Robot : MonoBehaviour
 
                 // Tell the simulation that we have deposited some food
                 simulation.DepositFood();
+
+                // Increase our current self assesement score and remember the time we need to
+                // forget about this food item in our self assement score
+                selfAssesmentScore += 1;
+                foodCollectionTimes.Add(existanceTime + maturationPeriod);
 
                 // Broadcast our current self assesment score and paramters for social learning
                 if (!currentlyMaturing) broadcastSocialTransfer();
@@ -578,10 +579,13 @@ public class Robot : MonoBehaviour
             // Set the alarm to stop maturing for maturationPeriod seconds in the future.
             maturationTime = existanceTime + maturationPeriod;
 
-            Debug.Log($"Robot {id} accepting social transfer");
+            // Robot resets its current score before entering mutation period
+            selfAssesmentScore = 0;
+
+            /*Debug.Log($"Robot {id} accepting social transfer");
             Debug.Log(string.Join(", ", recievedParameters));
             Debug.Log($"SelfAssesment: {selfAssesmentScore}, recieved {recievedAssesment}");
-            Debug.Log($"Will stop maturing at {maturationTime}, current exist time: {existanceTime}");
+            Debug.Log($"Will stop maturing at {maturationTime}, current exist time: {existanceTime}");*/
 
             // Overwrite our current parameters with new ones !
             // TODO: Implement gaussian mutation here? 
@@ -596,7 +600,7 @@ public class Robot : MonoBehaviour
                 else cueParameters[kvp.Item1] = newValue;
             }
 
-            Debug.Log(string.Join(", ", cueParameters.ToArray()));
+            //Debug.Log(string.Join(", ", cueParameters.ToArray()));
         }
     }
 
@@ -616,9 +620,9 @@ public class Robot : MonoBehaviour
         };
 
         // Select 4 random parameters to broadcast to other robots !
-        parameters = parameters.OrderBy(x => Random.Range(0, 7)).Take(4).ToArray();
+        //parameters = parameters.OrderBy(x => Random.Range(0, 7)).Take(4).ToArray();
 
-        Debug.Log(string.Join(", ", parameters));
+        //Debug.Log(string.Join(", ", parameters));
 
         simulation.Transfer(id, selfAssesmentScore, parameters);
     }
