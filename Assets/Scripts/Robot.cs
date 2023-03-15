@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -45,7 +46,7 @@ public class Robot : MonoBehaviour
     bool currentlyMaturing;
     // How long robots will mature for!
     // ie how long they will keep track of food items they have collected for assesment score.
-    float maturationPeriod = 400;
+    float maturationPeriod = 1000;
     float maturationTime;
 
     // Cue paramter mutation
@@ -203,7 +204,7 @@ public class Robot : MonoBehaviour
             {
                 // We have been maturing for long enough, stop maturing and allow social learning broadcasts
                 currentlyMaturing = false;
-                Debug.Log($"Stop maturing");
+                //Debug.Log($"Stop maturing");
             }
         }
 
@@ -224,9 +225,19 @@ public class Robot : MonoBehaviour
         var foodForgetTime = foodCollectionTimes.FirstOrDefault();
         if (foodForgetTime != 0 & foodForgetTime < existanceTime)
         {
+            //Debug.Log($"RobotId: {id}, forgetting: {foodForgetTime}");
             // TODO: Fix Self assesment score below 0 BUG!
             foodCollectionTimes.RemoveAt(0);
             selfAssesmentScore -= 1;
+            if (foodCollectionTimes.Any() & selfAssesmentScore == 0)
+            {
+                Debug.Log($"{id} Forget list non-empty and score is 0");
+                foreach (var item in foodCollectionTimes)
+                {
+                    Debug.Log($"{id}: {item}");
+                }
+                Debug.Log($"{id} -------------");
+            }
         }
 
         switch (state)
@@ -436,6 +447,7 @@ public class Robot : MonoBehaviour
                 // forget about this food item in our self assement score
                 selfAssesmentScore += 1;
                 foodCollectionTimes.Add(existanceTime + maturationPeriod);
+                //Debug.Log($"{id} found item, score {selfAssesmentScore}, forget {existanceTime + maturationPeriod}");
 
                 // Broadcast our current self assesment score and paramters for social learning
                 if (!currentlyMaturing) broadcastSocialTransfer();
@@ -517,7 +529,6 @@ public class Robot : MonoBehaviour
         }
     }
 
-    
     private bool CheckAvoidance()
     {
         var collisions = ScanForCollisions();
@@ -581,6 +592,7 @@ public class Robot : MonoBehaviour
 
             // Robot resets its current score before entering mutation period
             selfAssesmentScore = 0;
+            foodCollectionTimes.Clear();
 
             /*Debug.Log($"Robot {id} accepting social transfer");
             Debug.Log(string.Join(", ", recievedParameters));
